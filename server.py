@@ -133,7 +133,7 @@ def trend_api():
 
 @app.route("/")
 def home():
-    return render_template("./index.html")
+    return render_template("index.html")
 
 # -------- Run App --------
 if __name__ == "__main__":
