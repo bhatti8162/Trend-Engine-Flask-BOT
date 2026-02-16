@@ -14,6 +14,8 @@ API_KEY = "RMjOPL4EjT8v8dEJPtmpdQbUloPpMreOSQt1eqiH6KIFqJ2IYT5g0Kypxehpjie1"
 API_SECRET = "H1ZLDQQR6nD5QI4F8z11PryhfMV8wIRmJdRYFwtbdChVFAr7eq3xxxCRPf0H6yKT"
 
 SYMBOL_DEFAULT = "BTCUSDT"
+TRADE_BOT = "on" 
+QTY_DEFAULT = 0.001
 MA_FAST = 50
 MA_SLOW = 100
 LIMIT = 200
@@ -22,7 +24,8 @@ TIMEFRAMES = ["15m", "5m", "1m"]
 LOG_FILE = "trend_log.txt"
 
 client = Client(API_KEY, API_SECRET)
-client.FUTURES_URL = 'https://fapi.binance.com/fapi'
+# client.FUTURES_URL = 'https://fapi.binance.com/fapi'
+client.FUTURES_URL = 'https://testnet.binancefuture.com/fapi'
 
 last_cross_time = None
 # ==========================================
@@ -104,6 +107,8 @@ def check_trend_engine(symbol):
     # 1m Recent Cross
     df_1m = fetch_klines(symbol, "1m")
     cross_signal, cross_time = detect_recent_cross(df_1m)
+    # Get current price (last close)
+    current_price = float(df_1m.iloc[-1]['close'])
 
     now = utc_now()
     times = OrderedDict([
@@ -114,26 +119,138 @@ def check_trend_engine(symbol):
         ("Tokyo", format_time(now, "Asia/Tokyo"))
     ])
 
-    # Log only if signal exists
-    if tf_match or cross_signal or cross_time:
-        with open(LOG_FILE, "a") as f:
-            f.write(f"{times['UTC']} - TF Match: {tf_match}, Cross: {cross_signal}, Cross Time: {cross_time}\n")
 
     return {
-        "times": times,
+    "times": times,
+    "symbol": symbol,
+    "price": round(current_price),
+    "trends": trend_map,
+    "strength": strength_map,
+    "tf_match": tf_match,
+    "recent_cross": cross_signal,
+    "cross_time": str(cross_time)
+    }   
+
+
+# -------- Trading Engine --------
+def get_current_position(symbol):
+    positions = client.futures_position_information(symbol=symbol)
+    for pos in positions:
+        amt = float(pos["positionAmt"])
+        if amt != 0:
+            return amt
+    return 0.0
+
+def execute_single_trade(symbol, tf_match, quantity=QTY_DEFAULT):
+    """
+    Executes one trade per symbol:
+    - STRONG_BULLISH -> long
+    - STRONG_BEARISH -> short
+    - None or mismatch -> close any open trade
+    """
+    if(TRADE_BOT == "on"): 
+        try:
+            position_amt = get_current_position(symbol)
+
+            # ===== STRONG BULLISH =====
+            if tf_match == "STRONG_BULLISH":
+                if position_amt > 0:
+                    return "Already in LONG"
+                if position_amt < 0:
+                    # Close existing SHORT
+                    client.futures_create_order(
+                        symbol=symbol,
+                        side="BUY",
+                        type="MARKET",
+                        quantity=abs(position_amt)
+                    )
+                # Open LONG
+                client.futures_create_order(
+                    symbol=symbol,
+                    side="BUY",
+                    type="MARKET",
+                    quantity=quantity
+                )
+                return "Opened LONG"
+
+            # ===== STRONG BEARISH =====
+            elif tf_match == "STRONG_BEARISH":
+                if position_amt < 0:
+                    return "Already in SHORT"
+                if position_amt > 0:
+                    # Close existing LONG
+                    client.futures_create_order(
+                        symbol=symbol,
+                        side="SELL",
+                        type="MARKET",
+                        quantity=abs(position_amt)
+                    )
+                # Open SHORT
+                client.futures_create_order(
+                    symbol=symbol,
+                    side="SELL",
+                    type="MARKET",
+                    quantity=quantity
+                )
+                return "Opened SHORT"
+
+            # ===== NO ALIGNMENT =====
+            else:
+                if position_amt > 0:
+                    client.futures_create_order(
+                        symbol=symbol,
+                        side="SELL",
+                        type="MARKET",
+                        quantity=abs(position_amt)
+                    )
+                    return "Closed Position"
+                elif position_amt < 0:
+                    client.futures_create_order(
+                        symbol=symbol,
+                        side="BUY",
+                        type="MARKET",
+                        quantity=abs(position_amt)
+                    )
+                    return "Closed Position"
+                else:
+                    return "No position"
+
+        except Exception as e:
+            return f"Trade Error: {str(e)}"
+    else:
+        return "TRADE_BOT = OFF"
+
+    
+def trade_summary_single(symbol, tf_match):
+    position_amt = get_current_position(symbol)
+    
+    if position_amt > 0:
+        position_type = "LONG"
+    elif position_amt < 0:
+        position_type = "SHORT"
+    else:
+        position_type = "NONE"
+
+    return {
         "symbol": symbol,
-        "trends": trend_map,
-        "strength": strength_map,
-        "tf_match": tf_match,
-        "recent_cross": cross_signal,
-        "cross_time": str(cross_time)
+        "signal": tf_match,
+        "current_position": position_type,
+        "position_size": abs(position_amt)
     }
+
 
 # -------- API Routes --------
 @app.route("/api/trend")
 def trend_api():
     symbol = request.args.get("symbol", SYMBOL_DEFAULT)
     data = check_trend_engine(symbol)
+
+    trade_action = execute_single_trade(symbol, data["tf_match"])
+    summary = trade_summary_single(symbol, data["tf_match"])
+
+    data["trade_action"] = trade_action
+    data["summary"] = summary
+
     return jsonify(data)
 
 @app.route("/")
@@ -142,4 +259,4 @@ def home():
 
 # -------- Run App --------
 if __name__ == "__main__":
-    app.run(host='0.0.0.0',debug=True)
+    app.run(debug=True)

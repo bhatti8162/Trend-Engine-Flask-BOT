@@ -26,9 +26,9 @@
         <p id="tfMatch" class="text-2xl font-bold text-gray-400">Loading...</p>
     </div>
 
-    <!-- Recent Cross -->
+    <!-- Recent Price -->
     <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-        <h2 class="text-slate-400 mb-2">1m Recent Cross</h2>
+        <h2 class="text-slate-400 mb-2">Recent Price</h2>
         <p id="recentCross" class="text-2xl font-bold text-gray-400">Loading...</p>
     </div>
 
@@ -38,17 +38,17 @@
 
         <div>
             <p class="text-slate-400">1m</p>
-            <p id="trend1m" class="text-xl font-bold"></p>
+            <p id="trend1m" class="text-xl font-bold">--</p>
         </div>
 
         <div>
             <p class="text-slate-400">5m</p>
-            <p id="trend5m" class="text-xl font-bold"></p>
+            <p id="trend5m" class="text-xl font-bold">--</p>
         </div>
 
         <div>
             <p class="text-slate-400">15m</p>
-            <p id="trend15m" class="text-xl font-bold"></p>
+            <p id="trend15m" class="text-xl font-bold">--</p>
         </div>
     </div>
 
@@ -58,28 +58,35 @@
 
         <div>
             <p class="text-slate-400">UTC</p>
-            <p id="timeUTC" class="text-xl font-mono"></p>
+            <p id="timeUTC" class="text-xl font-mono">--</p>
         </div>
 
         <div>
             <p class="text-slate-400">London</p>
-            <p id="timeLondon" class="text-xl font-mono"></p>
+            <p id="timeLondon" class="text-xl font-mono">--</p>
         </div>
 
         <div>
             <p class="text-slate-400">New York</p>
-            <p id="timeNY" class="text-xl font-mono"></p>
+            <p id="timeNY" class="text-xl font-mono">--</p>
         </div>
 
         <div>
             <p class="text-slate-400">Pakistan</p>
-            <p id="timePK" class="text-xl font-mono"></p>
+            <p id="timePK" class="text-xl font-mono">--</p>
         </div>
 
         <div>
             <p class="text-slate-400">Tokyo</p>
-            <p id="timeTokyo" class="text-xl font-mono"></p>
+            <p id="timeTokyo" class="text-xl font-mono">--</p>
         </div>
+    </div>
+
+    <!-- Trade Status -->
+    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-2">
+        <h2 class="text-cyan-400 font-semibold mb-2">Trade Status</h2>
+        <p id="tradeAction" class="text-xl font-bold text-gray-400">Loading...</p>
+        <p id="tradeSummary" class="text-gray-400 text-sm font-mono">Loading...</p>
     </div>
 
     <!-- Signal History -->
@@ -116,65 +123,85 @@ async function fetchTrend() {
         const res = await fetch(`/api/trend?symbol=${symbol}`);
         const data = await res.json();
 
-        // Update signals
+        // Multi-TF Alignment
         update("tfMatch", data.tf_match);
-        update("recentCross", data.recent_cross);
 
+        // Trends per timeframe
         update("trend1m", data.trends?.["1m"]);
         update("trend5m", data.trends?.["5m"]);
         update("trend15m", data.trends?.["15m"]);
 
-        // Update times
+
+
+        // Times
         if (data.times) {
-            document.getElementById("timeUTC").textContent = data.times.UTC || "--";
-            document.getElementById("timeLondon").textContent = data.times.London || "--";
-            document.getElementById("timeNY").textContent = data.times.New_York || "--";
-            document.getElementById("timePK").textContent = data.times.PK || "--";
-            document.getElementById("timeTokyo").textContent = data.times.Tokyo || "--";
+            // Times
+            update("timeUTC", data.times.UTC);
+            update("timeLondon", data.times.London);
+            update("timeNY", data.times?.New_York);
+            update("timePK", data.times?.PK);
+            update("timeTokyo", data.times?.Tokyo);
         }
 
-        // Save signal history
-        addToHistory(data.recent_cross, data.symbol);
+        // Trade action & summary
+        updateColored("tradeAction", data.trade_action);
+        updateText("tradeSummary", formatSummary(data.summary));
+
+
+        // Save signal history (only 1m crosses)
+        addToHistory(data.recent_cross, data.symbol, data.price);
+
+        // Current price
+        update("recentCross", data.price);
 
     } catch (err) {
         console.log("API Error:", err);
     }
 }
 
-/* ---------------- UPDATE ELEMENT ---------------- */
+/* ---------------- UPDATE ELEMENTS ---------------- */
 function update(id, value) {
     const el = document.getElementById(id);
     el.textContent = value || "NO DATA";
     el.className = getColor(value);
 }
 
+function updateText(id, value) {
+    const el = document.getElementById(id);
+    el.textContent = value || "--";
+}
+
+function updateColored(id, value) {
+    const el = document.getElementById(id);
+    el.textContent = value || "--";
+    el.className = getColor(value);
+}
+
 function getColor(signal) {
     if (!signal) return "text-gray-400 text-xl font-bold";
-    if (signal.includes("BULL")) return "text-green-400 text-xl font-bold";
-    if (signal.includes("BEAR")) return "text-red-400 text-xl font-bold";
+    if (signal.includes("LONG") || signal.includes("BULL")) return "text-green-400 text-xl font-bold";
+    if (signal.includes("SHORT") || signal.includes("BEAR")) return "text-red-400 text-xl font-bold";
+    if (signal.includes("Closed")) return "text-gray-400 text-xl font-bold";
     return "text-gray-400 text-xl font-bold";
 }
 
+function formatSummary(summary) {
+    if (!summary) return "--";
+    return `Position: ${summary.current_position}, Size: ${summary.position_size}, Signal: ${summary.signal}`;
+}
+
 /* ---------------- SIGNAL HISTORY ---------------- */
-function addToHistory(recent1m, symbol) {
-    if (recent1m == null) return;   // blocks only null and undefined
+function addToHistory(recent1m, symbol, price) {
+    if (recent1m == null) return;
 
-    const log = `${recent1m} ${symbol}`;
-
+    const log = `${recent1m} ${symbol} ${price}`;
     let history = JSON.parse(localStorage.getItem("signalHistory") || "[]");
 
-    const timestamp = new Date().toLocaleTimeString();
+    const now = new Date();
+    const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
 
-    const newEntry = {
-        "1m Cross": log,
-        time: timestamp
-    };
-
-    history.push(newEntry);
-
-    if (history.length > 50) {
-        history.shift();
-    }
+    history.push({ "1m Cross": log, time: timestamp });
+    if (history.length > 50) history.shift();
 
     localStorage.setItem("signalHistory", JSON.stringify(history));
     renderHistory();
@@ -185,11 +212,8 @@ function renderHistory() {
     const history = JSON.parse(localStorage.getItem("signalHistory") || "[]");
 
     historyDiv.innerHTML = history
-        .map(h => {
-            let line = `[${h.time}] `;
-            if (h["1m Cross"]) line += `1m Cross: ${h["1m Cross"]}`;
-            return `<div>${line}</div>`;
-        })
+        .map(h => `[${h.time}] 1m Cross: ${h["1m Cross"]}`)
+        .map(line => `<div>${line}</div>`)
         .join("");
 }
 
@@ -204,9 +228,7 @@ window.addEventListener("load", () => {
 });
 
 /* Change symbol -> update cookie */
-select.addEventListener("change", () => {
-    setCookie("symbol", select.value);
-});
+select.addEventListener("change", () => setCookie("symbol", select.value));
 
 /* Watch cookie and reload if changed */
 let lastSymbol = getCookie("symbol");
@@ -216,7 +238,7 @@ setInterval(() => {
 }, 1000);
 
 /* Auto refresh data */
-setInterval(fetchTrend, 30000);
+setInterval(fetchTrend, 5000);
 </script>
 
 </body>
