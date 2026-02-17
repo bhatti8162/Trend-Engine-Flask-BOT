@@ -1,413 +1,269 @@
-from flask import Flask, render_template, jsonify, request
-from flask_cors import CORS
-from binance.client import Client
-from binance.exceptions import BinanceAPIException
-import pandas as pd
-from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
-from collections import OrderedDict
-import os
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trend Engine Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white min-h-screen">
 
-app = Flask(__name__)
-CORS(app)
+<div class="max-w-3xl mx-auto px-6 py-10 flex flex-col space-y-6">
 
-# ================= CONFIG =================
-API_KEY = os.getenv("BINANCE_API_KEY")
-API_SECRET = os.getenv("BINANCE_API_SECRET")
+    <h1 class="text-3xl font-bold text-cyan-400">Trend Engine</h1>
 
-TRADE_BOT = "on"
+    <!-- Symbol Select -->
+    <select id="symbolSelect"
+        class="bg-slate-800 border border-slate-700 px-4 py-2 rounded-lg text-white w-full">
+        <option value="BTCUSDT">BTCUSDT</option>
+        <option value="ETHUSDT">ETHUSDT</option>
+        <option value="BNBUSDT">BNBUSDT</option>
+        <option value="SOLUSDT">SOLUSDT</option>
+    </select>
 
-SYMBOL_DEFAULT = "BTCUSDT"
-QTY_DEFAULT = 0.001
-MA_FAST = 50
-MA_SLOW = 100
-LIMIT = 200
-TIMEFRAMES = ["15m", "5m", "1m"]
+    <!-- Multi TF -->
+    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+        <h2 class="text-slate-400 mb-2">Multi TF Alignment</h2>
+        <p id="tfMatch" class="text-2xl font-bold text-gray-400">Loading...</p>
+    </div>
 
-# Use Testnet safely
-client = Client(API_KEY, API_SECRET)
-client.FUTURES_URL = "https://testnet.binancefuture.com/fapi"
+    <!-- Recent Price -->
+    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+        <h2 class="text-slate-400 mb-2">Recent Price</h2>
+        <p id="recentCross" class="text-2xl font-bold text-gray-400">Loading...</p>
+    </div>
 
-# ==========================================
+    <!-- Trend Per TF -->
+    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+        <h2 class="text-cyan-400 font-semibold">Trend Per Timeframe</h2>
 
+        <div>
+            <p class="text-slate-400">1m</p>
+            <p id="trend1m" class="text-xl font-bold">--</p>
+        </div>
 
-# -------- Helper Functions --------
-def utc_now():
-    return datetime.now(timezone.utc)
+        <div>
+            <p class="text-slate-400">5m</p>
+            <p id="trend5m" class="text-xl font-bold">--</p>
+        </div>
 
+        <div>
+            <p class="text-slate-400">15m</p>
+            <p id="trend15m" class="text-xl font-bold">--</p>
+        </div>
+    </div>
+    <!-- ATR Per TF -->
+    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4">
+        <h2 class="text-cyan-400 font-semibold">ATR Per Timeframe</h2>
 
-def format_time(dt, tz_name):
-    local_time = dt.astimezone(ZoneInfo(tz_name))
+        <div>
+            <p class="text-slate-400">1m</p>
+            <p id="atr1m" class="text-xl font-bold">--</p>
+        </div>
 
-    if tz_name.upper() == "UTC":
-        return local_time.strftime("%Y-%m-%d %H:%M:%S")
-    else:
-        return local_time.strftime("%I:%M:%S %p")
+        <div>
+            <p class="text-slate-400">5m</p>
+            <p id="atr5m" class="text-xl font-bold">--</p>
+        </div>
 
+        <div>
+            <p class="text-slate-400">15m</p>
+            <p id="atr15m" class="text-xl font-bold">--</p>
+        </div>
+    </div>
 
-def fetch_klines(symbol, interval):
-    try:
-        klines = client.futures_klines(
-            symbol=symbol,
-            interval=interval,
-            limit=LIMIT
-        )
+    <!-- Times -->
+    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
+        <h2 class="text-slate-400 mb-2">Times</h2>
 
-        df = pd.DataFrame(klines, columns=[
-            'time', 'open', 'high', 'low', 'close', 'volume',
-            'close_time', 'qav', 'trades',
-            'taker_base_vol', 'taker_quote_vol', 'ignore'
-        ])
+        <div>
+            <p class="text-slate-400">UTC</p>
+            <p id="timeUTC" class="text-xl font-mono">--</p>
+        </div>
 
-        # FIX: convert all needed columns to float
-        numeric_cols = ['open', 'high', 'low', 'close', 'volume']
-        df[numeric_cols] = df[numeric_cols].astype(float)
+        <div>
+            <p class="text-slate-400">London</p>
+            <p id="timeLondon" class="text-xl font-mono">--</p>
+        </div>
 
-        df['close_time'] = pd.to_datetime(
-            df['close_time'], unit='ms', utc=True
-        )
+        <div>
+            <p class="text-slate-400">New York</p>
+            <p id="timeNY" class="text-xl font-mono">--</p>
+        </div>
 
-        df['ma50'] = df['close'].rolling(MA_FAST).mean()
-        df['ma100'] = df['close'].rolling(MA_SLOW).mean()
+        <div>
+            <p class="text-slate-400">Pakistan</p>
+            <p id="timePK" class="text-xl font-mono">--</p>
+        </div>
 
-        return df
+        <div>
+            <p class="text-slate-400">Tokyo</p>
+            <p id="timeTokyo" class="text-xl font-mono">--</p>
+        </div>
+    </div>
 
-    except BinanceAPIException as e:
-        print("Binance API Error:", e)
-        return None
-    except Exception as e:
-        print("Unexpected Error:", e)
-        return None
+    <!-- Trade Status -->
+    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-2">
+        <h2 class="text-cyan-400 font-semibold mb-2">Trade Status</h2>
+        <p id="tradeAction" class="text-xl font-bold text-gray-400">Loading...</p>
+        <p id="tradeSummary" class="text-gray-400 text-sm font-mono">Loading...</p>
+    </div>
 
+    <!-- Signal History -->
+    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-2">
+        <h2 class="text-cyan-400 font-semibold mb-2">Signal History</h2>
+        <div id="signalHistory" class="text-gray-400 text-sm font-mono max-h-64 overflow-y-auto"></div>
+    </div>
 
-def calculate_atr(df, period=14):
-    df['high-low'] = df['high'] - df['low']
-    df['high-close'] = (df['high'] - df['close'].shift()).abs()
-    df['low-close'] = (df['low'] - df['close'].shift()).abs()
+</div>
 
-    df['tr'] = df[['high-low', 'high-close', 'low-close']].max(axis=1)
-    df['atr'] = df['tr'].rolling(window=period).mean()
+<script>
+const select = document.getElementById("symbolSelect");
 
-    return df
+/* ---------------- COOKIE HELPERS ---------------- */
+function setCookie(name, value, days = 7) {
+    const d = new Date();
+    d.setTime(d.getTime() + (days*24*60*60*1000));
+    document.cookie = `${name}=${value};expires=${d.toUTCString()};path=/`;
+}
 
-
-def get_trend_strength(df, atr_period=14):
-
-    if df is None or len(df) < MA_SLOW:
-        return None, "UNKNOWN"
-
-    df = calculate_atr(df, period=atr_period)
-    last = df.iloc[-1]
-
-    if pd.isna(last['ma50']) or pd.isna(last['ma100']) or pd.isna(last['atr']):
-        return None, "UNKNOWN"
-
-    atr_percent = (last['atr'] / last['close']) * 100
-
-    if atr_percent < 1:
-        volatility = "LOW"
-    elif atr_percent < 3:
-        volatility = "MEDIUM"
-    else:
-        volatility = "HIGH"
-
-    if last['ma50'] > last['ma100']:
-        return "BULLISH", volatility
-    elif last['ma50'] < last['ma100']:
-        return "BEARISH", volatility
-
-    return None, volatility
-
-
-# -------- Core Engine --------
-def get_signal_values(symbol):
-    trend_map = OrderedDict()
-    strength_map = OrderedDict()
-
-    price_cache = None
-
-    for tf in TIMEFRAMES:
-        df = fetch_klines(symbol, tf)
-
-        if df is None:
-            trend_map[tf] = None
-            strength_map[tf] = "ERROR"
-            continue
-
-        trend, strength = get_trend_strength(df)
-        trend_map[tf] = trend
-        strength_map[tf] = strength
-
-        # Cache 1m price
-        if tf == "1m":
-            price_cache = float(df.iloc[-1]['close'])
-
-    # Multi-TF Alignment
-    if all(v == "BULLISH" for v in trend_map.values()):
-        tf_match = "STRONG_BULLISH"
-    elif all(v == "BEARISH" for v in trend_map.values()):
-        tf_match = "STRONG_BEARISH"
-    else:
-        tf_match = None
-
-    now = utc_now()
-    times = OrderedDict([
-        ("UTC", format_time(now, "UTC")),
-        ("PK", format_time(now, "Asia/Karachi")),
-        ("London", format_time(now, "Europe/London")),
-        ("New_York", format_time(now, "America/New_York")),
-        ("Tokyo", format_time(now, "Asia/Tokyo"))
-    ])
-    return times, symbol, price_cache, trend_map, strength_map, tf_match
-
-
-def check_trend_engine(symbol):
-    times, symbol, price_cache,trend_map,strength_map, tf_match = get_signal_values(symbol)
-
-    return {
-        "times": times,
-        "symbol": symbol,
-        "price": round(price_cache, 2) if price_cache else None,
-        "trends": trend_map,
-        "atr_strength": strength_map,
-        "tf_match": tf_match
+function getCookie(name) {
+    const cookies = document.cookie.split(';');
+    for (let c of cookies) {
+        const [key, val] = c.trim().split('=');
+        if (key === name) return val;
     }
+    return null;
+}
 
-# -------- Trading Engine: single trade only --------
-TRAILING_STOP_PERCENT = 0.5  # Trailing stop % for Binance
+/* ---------------- FETCH DATA ---------------- */
+async function fetchTrend() {
+    try {
+        const symbol = getCookie("symbol") || "BTCUSDT";
+        const res = await fetch(`/api/trend?symbol=${symbol}`);
+        const data = await res.json();
 
-# -------- Helper: get current position --------
-def get_current_position(symbol):
-    """
-    Returns the current open position amount for a symbol.
-    Positive = LONG, Negative = SHORT, 0 = No position
-    """
-    try:
-        positions = client.futures_position_information(symbol=symbol)
-        for pos in positions:
-            amt = float(pos["positionAmt"])
-            if amt != 0:
-                return amt
-        return 0.0
-    except Exception as e:
-        print(f"Error fetching position for {symbol}: {e}")
-        return 0.0
+        // Multi-TF Alignment
+        update("tfMatch", data.tf_match);
+
+        // Trends per timeframe
+        update("trend1m", data.trends?.["1m"]);
+        update("trend5m", data.trends?.["5m"]);
+        update("trend15m", data.trends?.["15m"]);
+
+        // ATR per timeframe
+        update("atr1m", data.atr_strength?.["1m"]);
+        update("atr5m", data.atr_strength?.["5m"]);
+        update("atr15m", data.atr_strength?.["15m"]);
 
 
-def execute_single_trade(symbol, quantity=QTY_DEFAULT):
-    """
-    Executes one trade per symbol:
-    - Uses global tf_match and atr_strength
-    - Only trade if ATR is not low
-    - Only one active position at a time
-    - Adds trailing stop
-    """
-    times, symbol, price_cache,trend_map,strength_map, tf_match = get_signal_values(symbol)
 
-    print(f"{tf_match} {strength_map['1m']} xxxxxxxxxxxxxxx")
-    if TRADE_BOT != "on":
-        return "TRADE_BOT = OFF"
-
-    try:
-        # Get current position
-        position_amt = get_current_position(symbol)
-
-        # ---- ATR Filter ----
-        atr_strength = strength_map['1m']
-        if atr_strength == "LOW":  # adjust threshold
-            return f"ATR too ({atr_strength}), skipping trade"
-
-        # ---- STRONG BULLISH ----
-        if tf_match == "STRONG_BULLISH":
-            # Already in LONG? skip duplicate
-            if position_amt > 0:
-                return "Already in LONG, skipping duplicate"
-
-            # Close SHORT if any
-            if position_amt < 0:
-                client.futures_create_order(
-                    symbol=symbol,
-                    side="BUY",
-                    type="MARKET",
-                    quantity=abs(position_amt)
-                )
-
-            # Open LONG
-            client.futures_create_order(
-                symbol=symbol,
-                side="BUY",
-                type="MARKET",
-                quantity=quantity
-            )
-
-            # Add trailing stop
-            client.futures_create_order(
-                symbol=symbol,
-                side="SELL",
-                type="TRAILING_STOP_MARKET",
-                quantity=quantity,
-                callbackRate=TRAILING_STOP_PERCENT,
-                reduceOnly=True
-            )
-
-            return "Opened LONG with trailing stop"
-
-        # ---- STRONG BEARISH ----
-        elif tf_match == "STRONG_BEARISH":
-            # Already in SHORT? skip duplicate
-            if position_amt < 0:
-                return "Already in SHORT, skipping duplicate"
-
-            # Close LONG if any
-            if position_amt > 0:
-                client.futures_create_order(
-                    symbol=symbol,
-                    side="SELL",
-                    type="MARKET",
-                    quantity=abs(position_amt)
-                )
-
-            # Open SHORT
-            client.futures_create_order(
-                symbol=symbol,
-                side="SELL",
-                type="MARKET",
-                quantity=quantity
-            )
-
-            # Add trailing stop
-            client.futures_create_order(
-                symbol=symbol,
-                side="BUY",
-                type="TRAILING_STOP_MARKET",
-                quantity=quantity,
-                callbackRate=TRAILING_STOP_PERCENT,
-                reduceOnly=True
-            )
-
-            return "Opened SHORT with trailing stop"
-
-        # ---- NO ALIGNMENT / CLOSE POSITIONS ----
-        else:
-            if position_amt > 0:
-                client.futures_create_order(
-                    symbol=symbol,
-                    side="SELL",
-                    type="MARKET",
-                    quantity=abs(position_amt)
-                )
-                return "Closed LONG"
-
-            elif position_amt < 0:
-                client.futures_create_order(
-                    symbol=symbol,
-                    side="BUY",
-                    type="MARKET",
-                    quantity=abs(position_amt)
-                )
-                return "Closed SHORT"
-
-            else:
-                return "No position, nothing to do"
-
-    except Exception as e:
-        return f"Trade Error: {str(e)}"
-
-# -------- Summary Engine: single trade only --------
-
-def trade_summary_single(symbol, tf_match):
-    """
-    Returns a detailed summary of current position and PnL for the symbol.
-    """
-    try:
-        # ------------------------
-        # 1️⃣ Current Position
-        # ------------------------
-        position_amt = get_current_position(symbol)
-        position_type = "NONE"
-        entry_price = 0.0
-
-        if position_amt > 0:
-            position_type = "LONG"
-        elif position_amt < 0:
-            position_type = "SHORT"
-
-        # ------------------------
-        # 2️⃣ Position Details
-        # ------------------------
-        positions = client.futures_position_information(symbol=symbol)
-        for pos in positions:
-            amt = float(pos["positionAmt"])
-            if amt != 0:
-                entry_price = float(pos["entryPrice"])
-                break
-
-        # ------------------------
-        # 3️⃣ Current Price
-        # ------------------------
-        df_1m = fetch_klines(symbol, "1m")
-        current_price = float(df_1m['close'].iloc[-1]) if df_1m is not None else 0.0
-
-        # ------------------------
-        # 4️⃣ PnL Calculation
-        # ------------------------
-        pnl = 0.0
-        if position_amt != 0:
-            if position_type == "LONG":
-                pnl = (current_price - entry_price) * abs(position_amt)
-            elif position_type == "SHORT":
-                pnl = (entry_price - current_price) * abs(position_amt)
-
-        # ------------------------
-        # 5️⃣ Account Balance
-        # ------------------------
-        balance_info = client.futures_account_balance()
-        wallet_balance = 0.0
-        for b in balance_info:
-            if b['asset'] == 'USDT':
-                wallet_balance = float(b['balance'])
-                break
-
-        # ------------------------
-        # 6️⃣ Return Summary
-        # ------------------------
-        return {
-            "symbol": symbol,
-            "signal": tf_match,
-            "current_position": position_type,
-            "position_size": abs(position_amt),
-            "entry_price": round(entry_price, 2),
-            "current_price": round(current_price, 2),
-            "unrealized_pnl": round(pnl, 2),
-            "wallet_balance": round(wallet_balance, 2)
+        // Times
+        if (data.times) {
+            // Times
+            update("timeUTC", data.times.UTC);
+            update("timeLondon", data.times.London);
+            update("timeNY", data.times?.New_York);
+            update("timePK", data.times?.PK);
+            update("timeTokyo", data.times?.Tokyo);
         }
 
-    except Exception as e:
-        return {"error": str(e)}
+        // Trade action & summary
+        updateColored("tradeAction", data.trade_action);
+        updateText("tradeSummary", formatSummary(data.summary));
 
 
+        // Save signal history (only 1m crosses)
+        addToHistory(data.recent_cross, data.symbol, data.price);
 
-# -------- API Routes --------
-@app.route("/api/trend")
-def trend_api():
-    symbol = request.args.get("symbol", SYMBOL_DEFAULT)
+        // Current price
+        update("recentCross", data.price);
 
-    data = check_trend_engine(symbol)
+    } catch (err) {
+        console.log("API Error:", err);
+    }
+}
 
-    trade_action = execute_single_trade(symbol, data["tf_match"])
-    summary = trade_summary_single(symbol, data["tf_match"])
+/* ---------------- UPDATE ELEMENTS ---------------- */
+function update(id, value) {
+    const el = document.getElementById(id);
+    el.textContent = value || "NO DATA";
+    el.className = getColor(value);
+}
 
-    data["trade_action"] = trade_action
-    data["summary"] = summary
+function updateText(id, value) {
+    const el = document.getElementById(id);
+    el.textContent = value || "--";
+}
 
-    return jsonify(data)
+function updateColored(id, value) {
+    const el = document.getElementById(id);
+    el.textContent = value || "--";
+    el.className = getColor(value);
+}
 
+function getColor(signal) {
+    if (!signal) return "text-gray-400 text-xl font-bold";
+    if (signal.includes("LONG") || signal.includes("BULL")) return "text-green-400 text-xl font-bold";
+    if (signal.includes("SHORT") || signal.includes("BEAR")) return "text-red-400 text-xl font-bold";
+    if (signal.includes("Closed")) return "text-gray-400 text-xl font-bold";
+    return "text-gray-400 text-xl font-bold";
+}
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+function formatSummary(summary) {
+    if (!summary) return "--";
+    return `Position: ${summary.current_position}, Size: ${summary.position_size}, Signal: ${summary.signal}`;
+}
 
+/* ---------------- SIGNAL HISTORY ---------------- */
+function addToHistory(recent1m, symbol, price) {
+    if (recent1m == null) return;
 
-# -------- Run App --------
-if __name__ == "__main__":
-    app.run(debug=True)
+    const log = `${recent1m} ${symbol} ${price}`;
+    let history = JSON.parse(localStorage.getItem("signalHistory") || "[]");
+
+    const now = new Date();
+    const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+
+    history.push({ "1m Cross": log, time: timestamp });
+    if (history.length > 50) history.shift();
+
+    localStorage.setItem("signalHistory", JSON.stringify(history));
+    renderHistory();
+}
+
+function renderHistory() {
+    const historyDiv = document.getElementById("signalHistory");
+    const history = JSON.parse(localStorage.getItem("signalHistory") || "[]");
+
+    historyDiv.innerHTML = history
+        .map(h => `[${h.time}] 1m Cross: ${h["1m Cross"]}`)
+        .map(line => `<div>${line}</div>`)
+        .join("");
+}
+
+/* ---------------- INIT ---------------- */
+window.addEventListener("load", () => {
+    const saved = getCookie("symbol");
+    if (saved) select.value = saved;
+    else setCookie("symbol", select.value);
+
+    renderHistory();
+    fetchTrend();
+});
+
+/* Change symbol -> update cookie */
+select.addEventListener("change", () => setCookie("symbol", select.value));
+
+/* Watch cookie and reload if changed */
+let lastSymbol = getCookie("symbol");
+setInterval(() => {
+    const current = getCookie("symbol");
+    if (current !== lastSymbol) location.reload();
+}, 1000);
+
+/* Auto refresh data */
+setInterval(fetchTrend, 30000);
+</script>
+
+</body>
+</html>
