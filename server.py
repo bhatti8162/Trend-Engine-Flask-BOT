@@ -372,9 +372,7 @@ def trade_summary_single(symbol, tf_match):
     Returns a detailed summary of current position and PnL for the symbol.
     """
     try:
-        # ------------------------
-        # 1️⃣ Current Position
-        # ------------------------
+        # Current Position
         position_amt = get_current_position(symbol)
         position_type = "NONE"
         entry_price = 0.0
@@ -384,9 +382,7 @@ def trade_summary_single(symbol, tf_match):
         elif position_amt < 0:
             position_type = "SHORT"
 
-        # ------------------------
-        # 2️⃣ Position Details
-        # ------------------------
+        # Position Details
         positions = client.futures_position_information(symbol=symbol)
         for pos in positions:
             amt = float(pos["positionAmt"])
@@ -394,15 +390,11 @@ def trade_summary_single(symbol, tf_match):
                 entry_price = float(pos["entryPrice"])
                 break
 
-        # ------------------------
-        # 3️⃣ Current Price
-        # ------------------------
+        # Current Price
         df_1m = fetch_klines(symbol, "1m")
         current_price = float(df_1m['close'].iloc[-1]) if df_1m is not None else 0.0
 
-        # ------------------------
-        # 4️⃣ PnL Calculation
-        # ------------------------
+        # PnL Calculation
         pnl = 0.0
         if position_amt != 0:
             if position_type == "LONG":
@@ -410,9 +402,7 @@ def trade_summary_single(symbol, tf_match):
             elif position_type == "SHORT":
                 pnl = (entry_price - current_price) * abs(position_amt)
 
-        # ------------------------
-        # 5️⃣ Account Balance
-        # ------------------------
+        # Account Balance
         balance_info = client.futures_account_balance()
         wallet_balance = 0.0
         for b in balance_info:
@@ -420,9 +410,7 @@ def trade_summary_single(symbol, tf_match):
                 wallet_balance = float(b['balance'])
                 break
 
-        # ------------------------
-        # 6️⃣ Return Summary
-        # ------------------------
+        # Return Summary
         return {
             "symbol": symbol,
             "signal": tf_match,
@@ -436,8 +424,6 @@ def trade_summary_single(symbol, tf_match):
 
     except Exception as e:
         return {"error": str(e)}
-
-
 
 # -------- API Routes --------
 @app.route("/api/trend")
