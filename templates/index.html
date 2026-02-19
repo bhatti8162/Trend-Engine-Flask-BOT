@@ -1,225 +1,296 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Trend Engine Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
+  </head>
 
-<body class="bg-slate-950 text-white min-h-screen">
-
-<div class="max-w-6xl mx-auto px-6 py-8 space-y-8 text-sm">
-
-    <!-- Header -->
-    <div class="flex justify-between items-center">
+  <body class="bg-slate-950 text-white min-h-screen">
+    <div class="max-w-6xl mx-auto px-6 py-8 space-y-8 text-sm">
+      <!-- Header -->
+      <div class="flex justify-between items-center">
         <h1 class="text-2xl font-semibold text-cyan-400 tracking-wide">
-            Trend Engine
+          Trend Engine
         </h1>
 
-        <select id="symbolSelect"
-            class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white">
-            <option value="BTCUSDT">BTCUSDT</option>
-            <option value="ETHUSDT">ETHUSDT</option>
-            <option value="BNBUSDT">BNBUSDT</option>
-            <option value="SOLUSDT">SOLUSDT</option>
+        <select
+          id="symbolSelect"
+          class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white"
+        >
+          <option value="BTCUSDT">BTCUSDT</option>
+          <option value="ETHUSDT">ETHUSDT</option>
+          <option value="BNBUSDT">BNBUSDT</option>
+          <option value="SOLUSDT">SOLUSDT</option>
         </select>
-    </div>
+      </div>
 
-    <!-- Top Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
-            <p class="text-slate-400 text-xs">Trade Decision</p>
-            <p id="tradeDecision" class="text-lg font-semibold mt-2">Loading...</p>
+      <!-- Top Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div
+          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
+        >
+          <p class="text-slate-400 text-xs">Trade Decision</p>
+          <p id="tradeDecision" class="text-lg font-semibold mt-2">
+            Loading...
+          </p>
         </div>
-        <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
-            <p class="text-slate-400 text-xs">Multi TF Alignment</p>
-            <p id="tfMatch" class="text-lg font-semibold mt-2">Loading...</p>
+        <div
+          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
+        >
+          <p class="text-slate-400 text-xs">Multi TF Alignment</p>
+          <p id="tfMatch" class="text-lg font-semibold mt-2">Loading...</p>
         </div>
 
-        <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
-            <p class="text-slate-400 text-xs">Recent Price</p>
-            <p id="recentCross" class="text-xl font-semibold mt-2">Loading...</p>
+        <div
+          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
+        >
+          <p class="text-slate-400 text-xs">Recent Price</p>
+          <p id="recentPrice" class="text-xl font-semibold mt-2">Loading...</p>
         </div>
+      </div>
 
-    </div>
-
-    <!-- Indicators -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-
+      <!-- Indicators -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <!-- Trend -->
-        <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3">
-            <h2 class="text-slate-300 text-xs font-semibold tracking-wide">Trend</h2>
-            <div class="flex justify-between">
-                <span class="text-slate-400">1m</span>
-                <span id="trend1m" class="font-medium">--</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-slate-400">5m</span>
-                <span id="trend5m" class="font-medium">--</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-slate-400">15m</span>
-                <span id="trend15m" class="font-medium">--</span>
-            </div>
+        <div
+          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3"
+        >
+          <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
+            Trend
+          </h2>
+          <div class="flex justify-between">
+            <span class="text-slate-400">1m</span>
+            <span id="trend1m" class="font-medium">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">5m</span>
+            <span id="trend5m" class="font-medium">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">15m</span>
+            <span id="trend15m" class="font-medium">--</span>
+          </div>
         </div>
 
         <!-- ADX -->
-        <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3">
-            <h2 class="text-slate-300 text-xs font-semibold tracking-wide">ADX</h2>
-            <div class="flex justify-between">
-                <span class="text-slate-400">1m</span>
-                <span id="adx1m" class="font-medium">--</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-slate-400">5m</span>
-                <span id="adx5m" class="font-medium">--</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-slate-400">15m</span>
-                <span id="adx15m" class="font-medium">--</span>
-            </div>
+        <div
+          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3"
+        >
+          <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
+            ADX
+          </h2>
+          <div class="flex justify-between">
+            <span class="text-slate-400">1m</span>
+            <span id="adx1m" class="font-medium">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">5m</span>
+            <span id="adx5m" class="font-medium">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">15m</span>
+            <span id="adx15m" class="font-medium">--</span>
+          </div>
         </div>
 
         <!-- ATR -->
-        <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3">
-            <h2 class="text-slate-300 text-xs font-semibold tracking-wide">ATR</h2>
-            <div class="flex justify-between">
-                <span class="text-slate-400">1m</span>
-                <span id="atr1m" class="font-medium">--</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-slate-400">5m</span>
-                <span id="atr5m" class="font-medium">--</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-slate-400">15m</span>
-                <span id="atr15m" class="font-medium">--</span>
-            </div>
+        <div
+          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3"
+        >
+          <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
+            ATR
+          </h2>
+          <div class="flex justify-between">
+            <span class="text-slate-400">1m</span>
+            <span id="atr1m" class="font-medium">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">5m</span>
+            <span id="atr5m" class="font-medium">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">15m</span>
+            <span id="atr15m" class="font-medium">--</span>
+          </div>
         </div>
 
         <!-- RSI -->
-        <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3">
-            <h2 class="text-slate-300 text-xs font-semibold tracking-wide">RSI</h2>
-            <div class="flex justify-between">
-                <span class="text-slate-400">1m</span>
-                <span id="rsi1m" class="font-medium">--</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-slate-400">5m</span>
-                <span id="rsi5m" class="font-medium">--</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-slate-400">15m</span>
-                <span id="rsi15m" class="font-medium">--</span>
-            </div>
+        <div
+          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3"
+        >
+          <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
+            RSI
+          </h2>
+          <div class="flex justify-between">
+            <span class="text-slate-400">1m</span>
+            <span id="rsi1m" class="font-medium">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">5m</span>
+            <span id="rsi5m" class="font-medium">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">15m</span>
+            <span id="rsi15m" class="font-medium">--</span>
+          </div>
         </div>
 
-        <!-- BOT Summary -->
-        <div id="TradeDiv"
-            class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
-            <p class="text-slate-400 text-xs">Trade Status</p>
-            <p id="tradeAction" class="text-base font-semibold mt-2">Loading...</p>
-            <p id="tradeSummary"
-                class="text-xs text-slate-400 mt-2 font-mono">Loading...</p>
+        <!-- Time Summary -->
+        <div
+          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
+        >
+
+        <p class="text-slate-400 text-xs">Time Summary</p>
+         <p id="timeSummary" class="text-xs text-slate-400 mt-2 font-mono">
+            Loading...
+          </p>
         </div>
+        <!-- BOT Summary -->
+        <div
+          id="TradeDiv"
+          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
+        >
+          <p class="text-slate-400 text-xs">Trade Status</p>
+          <p id="tradeAction" class="text-base font-semibold mt-2">
+            Loading...
+          </p>
+          <p id="tradeSummary" class="text-xs text-slate-400 mt-2 font-mono">
+            Loading...
+          </p>
+        </div>
+      </div>
     </div>
 
-</div>
+    <script>
+      const select = document.getElementById("symbolSelect");
 
-<script>
+      function setCookie(name, value, days = 7) {
+        const d = new Date();
+        d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+        document.cookie = `${name}=${value};expires=${d.toUTCString()};path=/`;
+      }
 
-const select = document.getElementById("symbolSelect");
+      function getCookie(name) {
+        const cookies = document.cookie.split(";");
+        for (let c of cookies) {
+          const [key, val] = c.trim().split("=");
+          if (key === name) return val;
+        }
+        return null;
+      }
 
-function setCookie(name, value, days = 7) {
-    const d = new Date();
-    d.setTime(d.getTime() + (days*24*60*60*1000));
-    document.cookie = `${name}=${value};expires=${d.toUTCString()};path=/`;
-}
+      function formatSummary(summary) {
+        if (!summary) return "--";
+        return `Position: ${summary.current_position}, Size: ${summary.position_size}, Signal: ${summary.signal}`;
+        }
 
-function getCookie(name) {
-    const cookies = document.cookie.split(';');
-    for (let c of cookies) {
-        const [key, val] = c.trim().split('=');
-        if (key === name) return val;
-    }
-    return null;
-}
+        function formatTimeSummary(times) {
+        if (!times || typeof times !== "object") return "--";
 
-async function fetchTrend() {
-    try {
-        const symbol = getCookie("symbol") || "BTCUSDT";
-        const res = await fetch(`/api/trend?symbol=${symbol}`);
-        const data = await res.json();
+        const london = times.London ?? "--";
+        const newYork = times.New_York ?? "--";
+        const pk = times.PK ?? "--";
+        const tokyo = times.Tokyo ?? "--";
+        const utc = times.UTC ?? "--";
 
-        update("tfMatch", data.tf_match);
-        update("tradeDecision", data.trade_decision);
-        update("trend1m", data.trends?.["1m"]);
-        update("trend5m", data.trends?.["5m"]);
-        update("trend15m", data.trends?.["15m"]);
+        return `
+            <div>UTC: ${utc}</div>
+            <div>PK: ${pk}</div>
+            <div>London: ${london}</div>
+            <div>New York: ${newYork}</div>
+            <div>Tokyo: ${tokyo}</div>
+        `;
+        }
 
-        update("adx1m", data.adx_strength?.["1m"]);
-        update("adx5m", data.adx_strength?.["5m"]);
-        update("adx15m", data.adx_strength?.["15m"]);
+        function updateText(id, value) {
+        const el = document.getElementById(id);
+        if (!el) return; // element not found, do nothing
+        el.innerHTML = value ?? "--"; // use nullish coalescing to handle null/undefined
+        }
 
-        update("atr1m", data.atr_strength?.["1m"]);
-        update("atr5m", data.atr_strength?.["5m"]);
-        update("atr15m", data.atr_strength?.["15m"]);
+      async function fetchTrend() {
+        try {
+          const symbol = getCookie("symbol") || "BTCUSDT";
+          const res = await fetch(`/api/trend?symbol=${symbol}`);
+          const data = await res.json();
 
-        update("rsi1m", data.rsi_strength?.["1m"]);
-        update("rsi5m", data.rsi_strength?.["5m"]);
-        update("rsi15m", data.rsi_strength?.["15m"]);
+          update("tfMatch", data.tf_match);
+          update("tradeDecision", data.trade_decision);
+          update("trend1m", data.trends?.["1m"]);
+          update("trend5m", data.trends?.["5m"]);
+          update("trend15m", data.trends?.["15m"]);
 
-        updateColored("tradeAction", data.trade_action);
-        update("recentCross", data.price);
+          update("adx1m", data.adx_strength?.["1m"]);
+          update("adx5m", data.adx_strength?.["5m"]);
+          update("adx15m", data.adx_strength?.["15m"]);
 
-    } catch (err) {
-        console.log("API Error:", err);
-    }
-}
+          update("atr1m", data.atr_strength?.["1m"]);
+          update("atr5m", data.atr_strength?.["5m"]);
+          update("atr15m", data.atr_strength?.["15m"]);
 
-function update(id, value) {
-    const el = document.getElementById(id);
-    el.textContent = value || "NO DATA";
-    el.className = getColor(value);
-}
+          update("rsi1m", data.rsi_strength?.["1m"]);
+          update("rsi5m", data.rsi_strength?.["5m"]);
+          update("rsi15m", data.rsi_strength?.["15m"]);
 
-function updateColored(id, value) {
-    const el = document.getElementById(id);
-    el.textContent = value || "--";
-    el.className = getColor(value);
-}
+          updateColored("tradeAction", data.trade_action);
+          updateText("timeSummary", formatTimeSummary(data.times));
+          updateText("tradeSummary", formatSummary(data.summary));
+          update("recentPrice", data.price);
 
-function getColor(signal) {
-    if (!signal) return "text-slate-400 font-medium";
+        } catch (err) {
+          console.log("API Error:", err);
+        }
+      }
 
-    if (signal.includes("LONG") || signal.includes("BULL") ||
-        signal.includes("STRONG") || signal.includes("OVERSOLD"))
-        return "text-emerald-400 font-semibold";
+      function update(id, value) {
+        const el = document.getElementById(id);
+        el.textContent = value || "NO DATA";
+        el.className = getColor(value);
+      }
 
-    if (signal.includes("SHORT") || signal.includes("BEAR") ||
-        signal.includes("WEAK") || signal.includes("OVERBOUGHT"))
-        return "text-rose-400 font-semibold";
+      function updateColored(id, value) {
+        const el = document.getElementById(id);
+        el.textContent = value || "--";
+        el.className = getColor(value);
+      }
 
-    return "text-slate-400 font-medium";
-}
+      function getColor(signal) {
+        if (!signal) return "text-slate-400 font-medium";
 
-window.addEventListener("load", () => {
-    const saved = getCookie("symbol");
-    if (saved) select.value = saved;
-    else setCookie("symbol", select.value);
+        if (
+          signal.includes("LONG") ||
+          signal.includes("BULL") ||
+          signal.includes("STRONG") ||
+          signal.includes("OVERSOLD")
+        )
+          return "text-emerald-400 font-semibold";
 
-    fetchTrend();
-});
+        if (
+          signal.includes("SHORT") ||
+          signal.includes("BEAR") ||
+          signal.includes("WEAK") ||
+          signal.includes("OVERBOUGHT")
+        )
+          return "text-rose-400 font-semibold";
 
-select.addEventListener("change", () => {
-    setCookie("symbol", select.value);
-    fetchTrend();
-});
+        return "text-slate-400 font-medium";
+      }
 
-setInterval(fetchTrend, 30000);
+      window.addEventListener("load", () => {
+        const saved = getCookie("symbol");
+        if (saved) select.value = saved;
+        else setCookie("symbol", select.value);
 
-</script>
+        fetchTrend();
+      });
 
-</body>
+      select.addEventListener("change", () => {
+        setCookie("symbol", select.value);
+        fetchTrend();
+      });
+
+      setInterval(fetchTrend, 30000);
+    </script>
+  </body>
 </html>

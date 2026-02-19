@@ -336,7 +336,7 @@ def execute_single_trade(symbol, quantity=QTY_DEFAULT):
     """
     times, symbol, price_cache,trend_map,atr_strength_map, adx_strength_map, rsi_strength_map, tf_match, new_trend = get_signals_on_trend(symbol)
 
-    print(f"TRADE_BOT:{TRADE_BOT} tf_match:{tf_match} new_trend:{new_trend} ATR:{atr_strength_map['15m']} ADX:{adx_strength_map['15m']}  xxxxxxXXXXXXXXXXXXXXxxxxx")
+    # print(f"TRADE_BOT:{TRADE_BOT} tf_match:{tf_match} new_trend:{new_trend} ATR:{atr_strength_map['15m']} ADX:{adx_strength_map['15m']}  xxxxxxXXXXXXXXXXXXXXxxxxx")
     
     if TRADE_BOT != "on":
         return "TRADEBOT = Off"
