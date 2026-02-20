@@ -1,185 +1,159 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Trend Engine Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
 
-  <body class="bg-slate-950 text-white min-h-screen">
-    <div class="max-w-6xl mx-auto px-6 py-8 space-y-8 text-sm">
-      <!-- Header -->
-      <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-semibold text-cyan-400 tracking-wide">
-          Trend Engine
-        </h1>
+<head>
+  <meta charset="UTF-8" />
+  <title>Trend Engine Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 
-        <select
-          id="symbolSelect"
-          class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white"
-        >
-          <option value="BTCUSDT">BTCUSDT</option>
-          <option value="ETHUSDT">ETHUSDT</option>
-          <option value="BNBUSDT">BNBUSDT</option>
-          <option value="SOLUSDT">SOLUSDT</option>
-        </select>
-      </div>
+<body class="bg-slate-950 text-white min-h-screen">
+  <div class="max-w-6xl mx-auto px-6 py-8 space-y-8 text-sm">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-semibold text-cyan-400 tracking-wide">
+        Trend Engine
+      </h1>
 
-      <!-- Top Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div
-          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
-        >
-          <div
-            class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
-          >
-            <p class="text-slate-400 text-xs">Trade Decision</p>
-            <p id="tradeDecision" class="text-lg font-semibold mt-2">
-              Loading...
-            </p>
-          </div>
-        </div>
-        <div
-          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
-        >
-          <div
-            class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
-          >
-            <p class="text-slate-400 text-xs">Multi TF Alignment</p>
-            <p id="tfMatch" class="text-lg font-semibold mt-2">Loading...</p>
-          </div>
-        </div>
+      <select id="symbolSelect" class="bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white">
+        <option value="BTCUSDT">BTCUSDT</option>
+        <option value="ETHUSDT">ETHUSDT</option>
+        <option value="BNBUSDT">BNBUSDT</option>
+        <option value="SOLUSDT">SOLUSDT</option>
+      </select>
+    </div>
 
-        <div
-          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
-        >
-          <p class="text-slate-400 text-xs">SHORT ATR Trailing</p>
-          <p id="shortAtrTrail" class="text-xl font-semibold mt-2">
+    <!-- Top Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
+        <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
+          <p class="text-slate-400 text-xs">Trade Decision</p>
+          <p id="tradeDecision" class="text-lg font-semibold mt-2">
             Loading...
           </p>
-          <div
-            class="bg-slate-900/80 backdrop-blur-md p-2 m-2 rounded-xl border border-slate-800"
-          >
-            <p class="text-slate-400 text-x1">Recent Price</p>
-            <p id="recentPrice" class="text-xl font-semibold mt-2">
-              Loading...
-            </p>
-          </div>
-          <p class="text-slate-400 text-xs">LONG ATR Trailing</p>
-          <p id="longAtrTrail" class="text-xl font-semibold mt-2">Loading...</p>
+        </div>
+      </div>
+      <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
+        <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
+          <p class="text-slate-400 text-xs">Multi TF Alignment</p>
+          <p id="tfMatch" class="text-lg font-semibold mt-2">Loading...</p>
         </div>
       </div>
 
-      <!-- Indicators -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <!-- Trend -->
-        <div
-          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3"
-        >
-          <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
-            Trend
-          </h2>
-          <div class="flex justify-between">
-            <span class="text-slate-400">1m</span>
-            <span id="trend1m" class="font-medium">--</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">5m</span>
-            <span id="trend5m" class="font-medium">--</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">15m</span>
-            <span id="trend15m" class="font-medium">--</span>
-          </div>
-        </div>
-
-        <!-- ADX -->
-        <div
-          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3"
-        >
-          <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
-            ADX
-          </h2>
-          <div class="flex justify-between">
-            <span class="text-slate-400">1m</span>
-            <span id="adx1m" class="font-medium">--</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">5m</span>
-            <span id="adx5m" class="font-medium">--</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">15m</span>
-            <span id="adx15m" class="font-medium">--</span>
-          </div>
-        </div>
-
-        <!-- ATR -->
-        <div
-          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3"
-        >
-          <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
-            ATR
-          </h2>
-          <div class="flex justify-between">
-            <span class="text-slate-400">1m</span>
-            <span id="atr1m" class="font-medium">--</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">5m</span>
-            <span id="atr5m" class="font-medium">--</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">15m</span>
-            <span id="atr15m" class="font-medium">--</span>
-          </div>
-        </div>
-
-        <!-- RSI -->
-        <div
-          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3"
-        >
-          <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
-            RSI
-          </h2>
-          <div class="flex justify-between">
-            <span class="text-slate-400">1m</span>
-            <span id="rsi1m" class="font-medium">--</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">5m</span>
-            <span id="rsi5m" class="font-medium">--</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">15m</span>
-            <span id="rsi15m" class="font-medium">--</span>
-          </div>
-        </div>
-
-        <!-- Time Summary -->
-        <div
-          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
-        >
-          <p class="text-slate-400 text-xs">Time Summary</p>
-          <p id="timeSummary" class="text-xs text-slate-400 mt-2 font-mono">
+      <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
+        <p class="text-slate-400 text-xs">SHORT ATR Trailing</p>
+        <p id="shortAtrTrail" class="text-xl font-semibold mt-2">
+          Loading...
+        </p>
+        <div class="bg-slate-900/80 backdrop-blur-md p-2 m-2 rounded-xl border border-slate-800">
+          <p class="text-slate-400 text-x1">Recent Price</p>
+          <p id="recentPrice" class="text-xl font-semibold mt-2">
             Loading...
           </p>
         </div>
-        <!-- BOT Summary -->
-        <div
-          id="TradeDiv"
-          class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
-        >
-          <p class="text-slate-400 text-xs">Trade Status</p>
-          <p id="tradeAction" class="text-base font-semibold mt-2">
-            Loading...
-          </p>
-          <p id="tradeSummary" class="text-xs text-slate-400 mt-2 font-mono">
-            Loading...
-          </p>
-        </div>
+        <p class="text-slate-400 text-xs">LONG ATR Trailing</p>
+        <p id="longAtrTrail" class="text-xl font-semibold mt-2">Loading...</p>
       </div>
     </div>
-    <script src="{{ url_for('static', filename='app.js') }}"></script>
-  </body>
+
+    <!-- Indicators -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <!-- Trend -->
+      <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3">
+        <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
+          Trend
+        </h2>
+        <div class="flex justify-between">
+          <span class="text-slate-400">1m</span>
+          <span id="trend1m" class="font-medium">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">5m</span>
+          <span id="trend5m" class="font-medium">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">15m</span>
+          <span id="trend15m" class="font-medium">--</span>
+        </div>
+      </div>
+
+      <!-- ADX -->
+      <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3">
+        <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
+          ADX
+        </h2>
+        <div class="flex justify-between">
+          <span class="text-slate-400">1m</span>
+          <span id="adx1m" class="font-medium">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">5m</span>
+          <span id="adx5m" class="font-medium">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">15m</span>
+          <span id="adx15m" class="font-medium">--</span>
+        </div>
+      </div>
+
+      <!-- ATR -->
+      <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3">
+        <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
+          ATR
+        </h2>
+        <div class="flex justify-between">
+          <span class="text-slate-400">1m</span>
+          <span id="atr1m" class="font-medium">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">5m</span>
+          <span id="atr5m" class="font-medium">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">15m</span>
+          <span id="atr15m" class="font-medium">--</span>
+        </div>
+      </div>
+
+      <!-- RSI -->
+      <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800 space-y-3">
+        <h2 class="text-slate-300 text-xs font-semibold tracking-wide">
+          RSI
+        </h2>
+        <div class="flex justify-between">
+          <span class="text-slate-400">1m</span>
+          <span id="rsi1m" class="font-medium">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">5m</span>
+          <span id="rsi5m" class="font-medium">--</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">15m</span>
+          <span id="rsi15m" class="font-medium">--</span>
+        </div>
+      </div>
+
+      <!-- Time Summary -->
+      <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
+        <p class="text-slate-400 text-xs">Time Summary</p>
+        <p id="timeSummary" class="text-xs text-slate-400 mt-2 font-mono">
+          Loading...
+        </p>
+      </div>
+      <!-- BOT Summary -->
+      <div id="TradeDiv" class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800">
+        <p class="text-slate-400 text-xs">Trade Status</p>
+        <p id="tradeAction" class="text-base font-semibold mt-2">
+          Loading...
+        </p>
+        <p id="tradeSummary" class="text-xs text-slate-400 mt-2 font-mono">
+          Loading...
+        </p>
+      </div>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+
 </html>

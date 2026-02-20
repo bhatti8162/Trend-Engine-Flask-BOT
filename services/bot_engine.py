@@ -1,9 +1,9 @@
 from services.trend_engine import tf_map_on_trend_values
-from services.binance_service import client
+from services.df_klines import fetch_df_klines
 from config import QTY_DEFAULT, TRADE_BOT
 
 # -------- Helper: get current position --------
-def get_current_position(symbol):
+def get_current_position(client, symbol):
     """
     Returns the current open position amount for a symbol.
     Positive = LONG, Negative = SHORT, 0 = No position
@@ -20,7 +20,7 @@ def get_current_position(symbol):
         return 0.0
 
 
-def execute_single_trade(symbol, quantity=QTY_DEFAULT):
+def execute_single_trade(client,symbol, quantity=QTY_DEFAULT):
     """
     Executes one trade per symbol:
     - Uses global tf_match and atr_strength
@@ -28,7 +28,7 @@ def execute_single_trade(symbol, quantity=QTY_DEFAULT):
     - Only one active position at a time
     - Adds trailing stop
     """
-    times, symbol, price_cache,trend_map,atr_strength_map, adx_strength_map, rsi_strength_map, tf_match, new_trend = tf_map_on_trend_values(symbol)
+    times, symbol, price_cache,trend_map,atr_strength_map, adx_strength_map, rsi_strength_map, tf_match, new_trend = tf_map_on_trend_values(client,symbol)
 
     # print(f"TRADE_BOT:{TRADE_BOT} tf_match:{tf_match} new_trend:{new_trend} ATR:{atr_strength_map['15m']} ADX:{adx_strength_map['15m']}  xxxxxxXXXXXXXXXXXXXXxxxxx")
     
@@ -37,7 +37,7 @@ def execute_single_trade(symbol, quantity=QTY_DEFAULT):
 
 # -------- Summary Engine: single trade only --------
 
-def trade_summary_single(symbol, tf_match):
+def trade_summary_single(client, symbol, tf_match):
     """
     Returns a detailed summary of current position and PnL for the symbol.
     """
@@ -61,7 +61,7 @@ def trade_summary_single(symbol, tf_match):
                 break
 
         # Current Price
-        df_1m = fetch_df_klines(symbol, "1m")
+        df_1m = fetch_df_klines(client, symbol, "1m")
         current_price = float(df_1m['close'].iloc[-1]) if df_1m is not None else 0.0
 
         # PnL Calculation

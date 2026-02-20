@@ -1,5 +1,5 @@
 from services.indicator_calculator import calculate_indicators
-from services.binance_service import fetch_df_klines
+from services.df_klines import fetch_df_klines
 from config import TIMEFRAMES, MA_SLOW,MA_FAST, LIMIT
 
 import pandas as pd
@@ -87,7 +87,7 @@ def trend_values_of_indicators(df):
 
 
 # -------- Core Engine --------
-def tf_map_on_trend_values(symbol):
+def tf_map_on_trend_values(client,symbol):
     trend_map = OrderedDict()
     atr_strength_map = OrderedDict()
     adx_strength_map= OrderedDict()
@@ -96,7 +96,7 @@ def tf_map_on_trend_values(symbol):
     price_cache = None
 
     for tf in TIMEFRAMES:
-        df = fetch_df_klines(symbol, tf)
+        df = fetch_df_klines(client,symbol, tf)
 
         if df is None:
             trend_map[tf] = None

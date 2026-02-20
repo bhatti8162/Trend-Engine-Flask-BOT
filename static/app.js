@@ -73,7 +73,7 @@ async function fetchTrend() {
     updateText("tradeSummary", formatSummary(data.summary));
     update("shortAtrTrail", data.ATR_TRAIL_SHORT);
     update("longAtrTrail", data.ATR_TRAIL_LONG);
-    update("recentPrice", data.price);
+    update("recentPrice", data.price.toString());
   } catch (err) {
     console.log("API Error:", err);
   }
@@ -130,4 +130,4 @@ select.addEventListener("change", () => {
   fetchTrend();
 });
 
-setInterval(fetchTrend, 10000);
+setInterval(fetchTrend, 20000);
