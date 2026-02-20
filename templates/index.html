@@ -30,26 +30,40 @@
         <div
           class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
         >
-          <p class="text-slate-400 text-xs">Trade Decision</p>
-          <p id="tradeDecision" class="text-lg font-semibold mt-2">
-            Loading...
-          </p>
+          <div
+            class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
+          >
+            <p class="text-slate-400 text-xs">Trade Decision</p>
+            <p id="tradeDecision" class="text-lg font-semibold mt-2">
+              Loading...
+            </p>
+          </div>
         </div>
         <div
           class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
         >
-          <p class="text-slate-400 text-xs">Multi TF Alignment</p>
-          <p id="tfMatch" class="text-lg font-semibold mt-2">Loading...</p>
+          <div
+            class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
+          >
+            <p class="text-slate-400 text-xs">Multi TF Alignment</p>
+            <p id="tfMatch" class="text-lg font-semibold mt-2">Loading...</p>
+          </div>
         </div>
 
         <div
           class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
         >
           <p class="text-slate-400 text-xs">SHORT ATR Trailing</p>
-          <p id="shortAtrTrail" class="text-xl font-semibold mt-2">Loading...</p>
-          <div class="bg-slate-900/80 backdrop-blur-md p-2 m-2 rounded-xl border border-slate-800">
-          <p class="text-slate-400 text-x1">Recent Price</p>
-          <p id="recentPrice" class="text-xl font-semibold mt-2">Loading...</p>
+          <p id="shortAtrTrail" class="text-xl font-semibold mt-2">
+            Loading...
+          </p>
+          <div
+            class="bg-slate-900/80 backdrop-blur-md p-2 m-2 rounded-xl border border-slate-800"
+          >
+            <p class="text-slate-400 text-x1">Recent Price</p>
+            <p id="recentPrice" class="text-xl font-semibold mt-2">
+              Loading...
+            </p>
           </div>
           <p class="text-slate-400 text-xs">LONG ATR Trailing</p>
           <p id="longAtrTrail" class="text-xl font-semibold mt-2">Loading...</p>
@@ -146,9 +160,8 @@
         <div
           class="bg-slate-900/80 backdrop-blur-md p-5 rounded-xl border border-slate-800"
         >
-
-        <p class="text-slate-400 text-xs">Time Summary</p>
-         <p id="timeSummary" class="text-xs text-slate-400 mt-2 font-mono">
+          <p class="text-slate-400 text-xs">Time Summary</p>
+          <p id="timeSummary" class="text-xs text-slate-400 mt-2 font-mono">
             Loading...
           </p>
         </div>
@@ -189,9 +202,9 @@
       function formatSummary(summary) {
         if (!summary) return "--";
         return `Position: ${summary.current_position}, Size: ${summary.position_size}, Signal: ${summary.signal}`;
-        }
+      }
 
-        function formatTimeSummary(times) {
+      function formatTimeSummary(times) {
         if (!times || typeof times !== "object") return "--";
 
         const london = times.London ?? "--";
@@ -207,13 +220,13 @@
             <div>New York: ${newYork}</div>
             <div>Tokyo: ${tokyo}</div>
         `;
-        }
+      }
 
-        function updateText(id, value) {
+      function updateText(id, value) {
         const el = document.getElementById(id);
         if (!el) return; // element not found, do nothing
         el.innerHTML = value ?? "--"; // use nullish coalescing to handle null/undefined
-        }
+      }
 
       async function fetchTrend() {
         try {
@@ -245,7 +258,6 @@
           update("shortAtrTrail", data.ATR_TRAIL_SHORT);
           update("longAtrTrail", data.ATR_TRAIL_LONG);
           update("recentPrice", data.price);
-
         } catch (err) {
           console.log("API Error:", err);
         }

@@ -55,7 +55,7 @@ def format_time(dt, tz_name):
         return local_time.strftime("%I:%M:%S %p")
 
 
-def fetch_klines(symbol, interval):
+def fetch_df_klines(symbol, interval):
     try:
         klines = client.futures_klines(
             symbol=symbol,
@@ -77,9 +77,6 @@ def fetch_klines(symbol, interval):
             df['close_time'], unit='ms', utc=True
         )
 
-        df['ma50'] = df['close'].rolling(MA_FAST).mean()
-        df['ma100'] = df['close'].rolling(MA_SLOW).mean()
-
         return df
 
     except BinanceAPIException as e:
@@ -90,16 +87,24 @@ def fetch_klines(symbol, interval):
         return None
 
 
-def calculate_indicators(df, period=14):
-    # ----- TRUE RANGE (ATR) -----
+def calculate_indicators(
+    df,
+    atr_period=14,
+    adx_period=14,
+    rsi_period=14,
+    ma50_period=50,
+    ma100_period=100
+):
+
+    # ===== ATR =====
     df['high-low'] = df['high'] - df['low']
     df['high-close'] = (df['high'] - df['close'].shift()).abs()
     df['low-close'] = (df['low'] - df['close'].shift()).abs()
 
     df['tr'] = df[['high-low', 'high-close', 'low-close']].max(axis=1)
-    df['atr'] = df['tr'].rolling(window=period).mean()
+    df['atr'] = df['tr'].rolling(window=atr_period).mean()
 
-    # ----- DIRECTIONAL MOVEMENT -----
+    # ===== ADX =====
     df['up_move'] = df['high'].diff()
     df['down_move'] = -df['low'].diff()
 
@@ -111,40 +116,38 @@ def calculate_indicators(df, period=14):
         (df['down_move'] > df['up_move']) & (df['down_move'] > 0), 0.0
     )
 
-    # ----- SMOOTHED DM -----
-    df['+di'] = 100 * (df['+dm'].rolling(window=period).mean() / df['atr'])
-    df['-di'] = 100 * (df['-dm'].rolling(window=period).mean() / df['atr'])
+    plus_di = 100 * (df['+dm'].rolling(window=adx_period).mean() / df['atr'])
+    minus_di = 100 * (df['-dm'].rolling(window=adx_period).mean() / df['atr'])
 
-    # ----- DX & ADX -----
-    df['dx'] = (
-        (abs(df['+di'] - df['-di']) / (df['+di'] + df['-di'])) * 100
-    )
+    df['dx'] = (abs(plus_di - minus_di) / (plus_di + minus_di)) * 100
+    df['adx'] = df['dx'].rolling(window=adx_period).mean()
 
-    df['adx'] = df['dx'].rolling(window=period).mean()
-
-    # ----- RSI -----
+    # ===== RSI =====
     df['change'] = df['close'].diff()
-
     df['gain'] = df['change'].where(df['change'] > 0, 0.0)
     df['loss'] = -df['change'].where(df['change'] < 0, 0.0)
 
-    avg_gain = df['gain'].rolling(window=period).mean()
-    avg_loss = df['loss'].rolling(window=period).mean()
+    avg_gain = df['gain'].rolling(window=rsi_period).mean()
+    avg_loss = df['loss'].rolling(window=rsi_period).mean()
 
     rs = avg_gain / avg_loss
     df['rsi'] = 100 - (100 / (1 + rs))
+
+    # ===== Moving Averages =====
+    df['ma50'] = df['close'].rolling(window=ma50_period).mean()
+    df['ma100'] = df['close'].rolling(window=ma100_period).mean()
 
     return df
 
 
 
 
-def get_trend(df, atr_period=14):
+def trend_values_of_indicators(df):
 
     if df is None or len(df) < MA_SLOW:
         return None, "UNKNOWN", "UNKNOWN", None, None
 
-    df = calculate_indicators(df, period=atr_period)
+    df = calculate_indicators(df)
     last = df.iloc[-1]
 
     if (
@@ -200,7 +203,7 @@ def get_trend(df, atr_period=14):
 
 
 # -------- Core Engine --------
-def get_signals_on_trend(symbol):
+def tf_map_on_trend_values(symbol):
     trend_map = OrderedDict()
     atr_strength_map = OrderedDict()
     adx_strength_map= OrderedDict()
@@ -209,14 +212,14 @@ def get_signals_on_trend(symbol):
     price_cache = None
 
     for tf in TIMEFRAMES:
-        df = fetch_klines(symbol, tf)
+        df = fetch_df_klines(symbol, tf)
 
         if df is None:
             trend_map[tf] = None
             atr_strength_map[tf] = "ERROR"
             continue
 
-        trend, atr, adx, rsi = get_trend(df)
+        trend, atr, adx, rsi = trend_values_of_indicators(df)
         trend_map[tf] = trend
         atr_strength_map[tf] = atr
         adx_strength_map[tf] = adx
@@ -296,12 +299,14 @@ def get_decision_on_signal(trend_map, atr_map, adx_map, rsi_map):
     return "NONE"
 
 def check_trend_engine(symbol):
-    times, symbol, price_cache,trend_map,atr_strength_map, adx_strength_map, rsi_strength_map, tf_match, new_trend= get_signals_on_trend(symbol)
 
+    # TimeFrames Mappings
+    times, symbol, price_cache, trend_map,atr_strength_map, adx_strength_map, rsi_strength_map, tf_match, new_trend= tf_map_on_trend_values(symbol)
+
+    # Final Trade Decisions
     trade_decision = get_decision_on_signal(trend_map, atr_strength_map, adx_strength_map, rsi_strength_map)
 
-
-    
+    # ATR TRAIL Values
     LONG_TRAIL_STOP, is_hit_LONG = long_trailing_atr(atr_strength_map["1m"],round(price_cache))
     SHORT_TRAIL_STOP, is_hit_SHORT = short_trailing_atr(atr_strength_map["1m"],round(price_cache))
 
@@ -415,7 +420,7 @@ def execute_single_trade(symbol, quantity=QTY_DEFAULT):
     - Only one active position at a time
     - Adds trailing stop
     """
-    times, symbol, price_cache,trend_map,atr_strength_map, adx_strength_map, rsi_strength_map, tf_match, new_trend = get_signals_on_trend(symbol)
+    times, symbol, price_cache,trend_map,atr_strength_map, adx_strength_map, rsi_strength_map, tf_match, new_trend = tf_map_on_trend_values(symbol)
 
     # print(f"TRADE_BOT:{TRADE_BOT} tf_match:{tf_match} new_trend:{new_trend} ATR:{atr_strength_map['15m']} ADX:{adx_strength_map['15m']}  xxxxxxXXXXXXXXXXXXXXxxxxx")
     
@@ -429,9 +434,7 @@ def trade_summary_single(symbol, tf_match):
     Returns a detailed summary of current position and PnL for the symbol.
     """
     try:
-        # ------------------------
-        # 1️⃣ Current Position
-        # ------------------------
+        # Current Position
         position_amt = get_current_position(symbol)
         position_type = "NONE"
         entry_price = 0.0
@@ -441,9 +444,7 @@ def trade_summary_single(symbol, tf_match):
         elif position_amt < 0:
             position_type = "SHORT"
 
-        # ------------------------
-        # 2️⃣ Position Details
-        # ------------------------
+        # Position Details
         positions = client.futures_position_information(symbol=symbol)
         for pos in positions:
             amt = float(pos["positionAmt"])
@@ -451,15 +452,11 @@ def trade_summary_single(symbol, tf_match):
                 entry_price = float(pos["entryPrice"])
                 break
 
-        # ------------------------
-        # 3️⃣ Current Price
-        # ------------------------
-        df_1m = fetch_klines(symbol, "1m")
+        # Current Price
+        df_1m = fetch_df_klines(symbol, "1m")
         current_price = float(df_1m['close'].iloc[-1]) if df_1m is not None else 0.0
 
-        # ------------------------
-        # 4️⃣ PnL Calculation
-        # ------------------------
+        # PnL Calculation
         pnl = 0.0
         if position_amt != 0:
             if position_type == "LONG":
@@ -467,9 +464,7 @@ def trade_summary_single(symbol, tf_match):
             elif position_type == "SHORT":
                 pnl = (entry_price - current_price) * abs(position_amt)
 
-        # ------------------------
-        # 5️⃣ Account Balance
-        # ------------------------
+        # Account Balance
         balance_info = client.futures_account_balance()
         wallet_balance = 0.0
         for b in balance_info:
@@ -477,9 +472,7 @@ def trade_summary_single(symbol, tf_match):
                 wallet_balance = float(b['balance'])
                 break
 
-        # ------------------------
-        # 6️⃣ Return Summary
-        # ------------------------
+        # Return Summary
         return {
             "symbol": symbol,
             "signal": tf_match,
