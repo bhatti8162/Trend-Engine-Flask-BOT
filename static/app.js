@@ -20,25 +20,57 @@ function formatSummary(summary) {
   return `Position: ${summary.current_position}, Size: ${summary.position_size}, Signal: ${summary.signal}`;
 }
 
-function formatTimeSummary(times) {
-  if (!times || typeof times !== "object") return "--";
+function formatTimeSummary(data) {
+    if (!data || typeof data !== "object") return "--";
 
-  const london = times.London ?? "--";
-  const newYork = times.New_York ?? "--";
-  const pk = times.PK ?? "--";
-  const tokyo = times.Tokyo ?? "--";
-  const utc = times.UTC ?? "--";
+    const times = data.current_times ?? {};
+    const sessions = data.sessions ?? {};
 
-  return `
-            <div>UTC: ${utc}</div>
-            <div>PK: ${pk}</div>
-            </br>
-            <div>Tokyo: ${tokyo}</div>
-            <div>London: ${london}</div>
-            <div>New York: ${newYork}</div>
-        `;
+    const utc = times.UTC ?? "--";
+    const pk = times.PK ?? "--";
+    const tokyoTime = times.Tokyo ?? "--";
+    const londonTime = times.London ?? "--";
+    const newYorkTime = times.New_York ?? "--";
+
+    // Helper function to format session info
+    const formatSession = (session) => {
+        if (!session) return "--";
+        if (typeof session === "string") return session;
+        if (typeof session === "object") return `High: ${session.high}, Low: ${session.low}`;
+        return "--";
+    };
+
+    return `
+      <div class="bg-slate-900 text-white p-6 rounded-xl shadow-lg space-y-4 w-80">
+        <div class="text-sm">
+          <strong>UTC:</strong> <span class="text-indigo-400">${utc}</span>
+        </div>
+        <div class="text-sm">
+          <strong>PK:</strong> <span class="text-green-400">${pk}</span>
+        </div>
+
+        <hr class="border-slate-700">
+
+        <div class="text-sm">
+          <strong>Tokyo:</strong> <span class="text-yellow-300">${tokyoTime}</span>
+          <br/>
+          <span class="text-slate-400">(${formatSession(sessions.Tokyo)})</span>
+        </div>
+
+        <div class="text-sm">
+          <strong>London:</strong> <span class="text-blue-400">${londonTime}</span>
+          <br/>
+          <span class="text-slate-400">(${formatSession(sessions.London)})</span>
+        </div>
+
+        <div class="text-sm">
+          <strong>New York:</strong> <span class="text-red-400">${newYorkTime}</span>
+          <br/>
+          <span class="text-slate-400">(${formatSession(sessions.New_York)})</span>
+        </div>
+      </div>
+    `;
 }
-
 function updateText(id, value) {
   const el = document.getElementById(id);
   if (!el) return; // element not found, do nothing
@@ -73,7 +105,7 @@ async function fetchTrend() {
     update("rsi15m", data.rsi_strength?.["15m"]);
 
     updateColored("tradeAction", data.trade_action);
-    updateText("timeSummary", formatTimeSummary(data.times));
+    updateText("timeSummary", formatTimeSummary(data.btc_sessions));
     updateText("tradeSummary", formatSummary(data.summary));
     update("shortAtrTrail", data.ATR_TRAIL_SHORT);
     update("longAtrTrail", data.ATR_TRAIL_LONG);

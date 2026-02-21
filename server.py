@@ -6,6 +6,7 @@ from config import SYMBOL_DEFAULT
 from services.binance_service import get_binance_client
 from services.bot_engine import execute_single_trade, trade_summary_single
 from services.trend_engine import tf_map_on_trend_values, get_decision_on_signal
+from services.h_l_sessions import get_all_session_high_low
 from services.trailing_engine import long_trailing_atr, short_trailing_atr
 
 
@@ -17,8 +18,6 @@ else:
     print("Failed to authenticate Binance client.")
 
 
-
-
 def check_trend_engine(symbol):
 
     # TimeFrames Mappings
@@ -26,6 +25,9 @@ def check_trend_engine(symbol):
 
     # Final Trade Decisions
     trade_decision = get_decision_on_signal(trend_map, atr_strength_map, adx_strength_map, rsi_strength_map)
+
+    # Example usage
+    btc_sessions = get_all_session_high_low(client,"BTCUSDT")
 
     # ATR TRAIL Values
     LONG_TRAIL_STOP, is_hit_LONG = long_trailing_atr(atr_strength_map["1m"],round(price_cache))
@@ -44,6 +46,7 @@ def check_trend_engine(symbol):
         "trade_decision": trade_decision,
         "ATR_TRAIL_LONG": [LONG_TRAIL_STOP, is_hit_LONG],
         "ATR_TRAIL_SHORT": [SHORT_TRAIL_STOP, is_hit_SHORT],
+        "btc_sessions": btc_sessions,
         "tf_match": tf_match
     }
 app = Flask(__name__)
