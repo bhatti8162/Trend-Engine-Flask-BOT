@@ -167,9 +167,9 @@ def get_decision_on_signal(
         atr_map,
         adx_map,
         rsi_map):
-
     """
-    Returns descriptive one-liner based on multi-timeframe and indicator alignment
+    Descriptive market tool with 1H ATR + ADX checks.
+    Returns: one-liner description + confidence 0-10
     """
 
     t1h = trend_map.get("1h")
@@ -181,55 +181,87 @@ def get_decision_on_signal(
 
     vwap15 = vwap_trend_map.get("15m")
 
-    atr15 = atr_map.get("15m")  # (state, value)
-    adx15 = adx_map.get("15m")
+    atr1h = atr_map.get("1h")   # (state, value)
+    adx1h = adx_map.get("1h")   # (state, value)
     rsi5  = rsi_map.get("5m")
 
-    if not all([t1h, t15, t5, ema1h, ema15, vwap15, atr15, adx15, rsi5]):
+    if not all([t1h, t15, t5, ema1h, ema15, vwap15, atr1h, adx1h, rsi5]):
         return "Insufficient data to make a decision"
 
-    atr_state, atr_value = atr15
-    _, adx_value = adx15
+    atr_state, atr_value = atr1h
+    _, adx_value = adx1h
     _, rsi_value = rsi5
 
-    # === SIDEWAYS / LOW VOLATILITY ===
-    if atr_state == "LOW" or adx_value < 20:
-        return "Sideways / Low Volatility – avoid trading"
+    description = ""
+    confidence = 0
 
-    # === CONFLICT CHECK ===
-    conflict = False
-    if (t1h == "BULLISH" and ema1h != "BULLISH") or (t1h == "BEARISH" and ema1h != "BEARISH"):
-        conflict = True
-    if conflict:
-        return "Mixed Signals – trend conflict between EMA and 1H trend"
+    # === 1H ATR soft filter ===
+    if atr_state == "LOW":
+        confidence -= 1
+        atr_note = "1H Low Volatility – trade with caution"
+    else:
+        confidence += 1
+        atr_note = ""
+
+    # === 1H ADX trend check ===
+    if adx_value < 25:
+        confidence -= 2
+        description = "Weak Trend – caution advised"
+    else:
+        confidence += 2
 
     # === STRONG BULLISH ===
     if (t1h == "BULLISH" and t15 == "BULLISH" and t5 == "BULLISH" and
-        ema1h == "BULLISH" and ema15 == "BULLISH" and vwap15 == "ABOVE" and
-        adx_value >= 25 and 40 <= rsi_value <= 55):
-        return "Strong Bullish Continuation – high confidence"
+        ema1h == "BULLISH" and ema15 == "BULLISH" and vwap15 == "ABOVE"):
+        confidence += 3
+        description = "Strong Bullish Continuation"
+
+        if 40 <= rsi_value <= 55:
+            confidence += 1
+            description += " – Pullback Opportunity"
+        elif rsi_value < 40:
+            description += " – Early Pullback"
+        elif rsi_value > 60:
+            description += " – Late / Overextended"
+
+        if atr_state == "LOW":
+            description += f" ({atr_note})"
 
     # === WEAK BULLISH ===
-    if (t1h == "BULLISH" and t15 == "BULLISH" and
-        (t5 != "BULLISH" or ema15 != "BULLISH" or vwap15 != "ABOVE" or adx_value < 25 or rsi_value < 40 or rsi_value > 60)):
-        return "Weak Bullish Pullback – caution advised"
+    elif t1h == "BULLISH" and t15 == "BULLISH":
+        confidence += 2
+        description = "Weak Bullish – trend aligned but minor conflicts"
+
+        if atr_state == "LOW":
+            description += f" ({atr_note})"
 
     # === STRONG BEARISH ===
     if (t1h == "BEARISH" and t15 == "BEARISH" and t5 == "BEARISH" and
-        ema1h == "BEARISH" and ema15 == "BEARISH" and vwap15 == "BELOW" and
-        adx_value >= 25 and 45 <= rsi_value <= 60):
-        return "Strong Bearish Continuation – high confidence"
+        ema1h == "BEARISH" and ema15 == "BEARISH" and vwap15 == "BELOW"):
+        confidence += 3
+        description = "Strong Bearish Continuation"
+
+        if 45 <= rsi_value <= 60:
+            confidence += 1
+            description += " – Bounce Opportunity"
+        elif rsi_value < 35:
+            description += " – Early / Oversold"
+        elif rsi_value > 65:
+            description += " – Late / Overextended"
+
+        if atr_state == "LOW":
+            description += f" ({atr_note})"
 
     # === WEAK BEARISH ===
-    if (t1h == "BEARISH" and t15 == "BEARISH" and
-        (t5 != "BEARISH" or ema15 != "BEARISH" or vwap15 != "BELOW" or adx_value < 25 or rsi_value < 35 or rsi_value > 65)):
-        return "Weak Bearish Bounce – caution advised"
+    elif t1h == "BEARISH" and t15 == "BEARISH":
+        confidence += 2
+        description = "Weak Bearish – trend aligned but minor conflicts"
 
-    # === PULLBACK / SIDEWAYS WITH TREND ===
-    if t1h == "BULLISH" and 35 <= rsi_value <= 65:
-        return "Bullish Bias – in minor pullback or consolidation"
+        if atr_state == "LOW":
+            description += f" ({atr_note})"
 
-    if t1h == "BEARISH" and 35 <= rsi_value <= 65:
-        return "Bearish Bias – in minor bounce or consolidation"
+    # === SIDEWAYS / UNCLEAR ===
+    if confidence <= 0:
+        description = "Sideways / Unclear – avoid trading"
 
-    return "Unclear signals – wait for better alignment"
+    return f"{description} | Confidence: {confidence}/10"
