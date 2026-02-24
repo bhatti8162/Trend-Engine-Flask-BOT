@@ -261,7 +261,7 @@ def get_decision_on_signal(
             description += f" ({atr_note})"
 
     # === SIDEWAYS / UNCLEAR ===
-    if confidence <= 0:
+    if confidence <= 3:
         description = "Sideways / Unclear – avoid trading"
 
     return f"{description} | Confidence: {confidence}/10"
