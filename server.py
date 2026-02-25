@@ -5,6 +5,7 @@ from config import SYMBOL_DEFAULT
 from services.binance_service import get_binance_client
 from services.trend_engine import tf_map_on_trend_values
 from services.trend_decision import get_decision_on_signal
+from services.h1_change import get_last_hour_strength
 from services.trailing_engine import long_trailing_atr, short_trailing_atr
 
 
@@ -61,6 +62,8 @@ def check_trend_engine(symbol):
             rsi_strength_map
         )
 
+        h1_change = get_last_hour_strength(client, symbol)
+
         return {
             "times": times,
             "symbol": symbol,
@@ -71,7 +74,7 @@ def check_trend_engine(symbol):
             "rsi_strength": rsi_strength_map,
             "ema25_strength": ema_trend_map,
             "vwap_strength": vwap_trend_map,
-            "trade_decision": trade_decision,
+            "trade_decision": f"{trade_decision} | 1h change: {h1_change}%",
             "tf_match": tf_match
         }
         
