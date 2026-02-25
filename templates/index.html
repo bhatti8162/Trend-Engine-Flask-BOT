@@ -50,6 +50,7 @@
     text-align: center;
   }
   .green { color: #00ff88; }
+  .red { color: #ff4d4d; } 
   .gray { color: #999; }
 
   .times {
@@ -263,7 +264,10 @@ function colorTrend(value) {
 }
 
 function colorVWAP(value) {
-  return value === "ABOVE" ? "green" : "gray";
+  if (!value) return "gray";
+  if (value === "ABOVE") return "green";
+  if (value === "BELOW") return "red";   // handle bearish
+  return "gray";
 }
 
 function showLoading(state) {
