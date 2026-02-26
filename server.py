@@ -68,7 +68,7 @@ def check_trend_engine(symbol):
         return {
             "times": times,
             "symbol": symbol,
-            "btc_h1_change": btc_h1_change,
+            "btc_h1_change": f"{btc_h1_change}%",
             "price": round(price_cache, 6) if price_cache else None,
             "trends": trend_map,
             "atr_strength": atr_strength_map,
