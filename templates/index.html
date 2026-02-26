@@ -131,7 +131,7 @@ async function loadTrend(symbol = "BTCUSDT") {
 
     renderHeader(data);
     renderTimeframes(data);
-    renderTimes(data);
+    renderTimes(data.times);
 
   } catch (err) {
     console.error("API Error:", err);
@@ -182,21 +182,49 @@ function renderTimeframes(data) {
   });
 }
 
-function renderTimes(data) {
+function renderTimes(apiTimes) {
   const container = document.getElementById("times");
   container.innerHTML = "";
-  if (!data.times) return;
 
-  // Define the desired order
+  // Current PKT time
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const pkt = new Date(utc + 5*60*60*1000);
+  const currentHour = pkt.getHours();
+  const currentMinute = pkt.getMinutes();
+  const currentTime = currentHour + currentMinute/60;
+
+  const sessions = {
+    "Tokyo": { start: 3, end: 12, label: "3:00 AM – 12:00 PM" },
+    "London": { start: 12, end: 21, label: "12:00 PM – 9:00 PM" },
+    "NewYork": { start: 17, end: 26, label: "5:00 PM – 2:00 AM" }
+  };
+
   const order = ["UTC", "PK", "Tokyo", "London", "NewYork"];
+  order.forEach(key => {
+    let className = "gray";
+    let timeLabel = "--";
 
-  // Loop in the specified order
-  order.forEach((key) => {
-    if (data.times[key]) {
-      const row = document.createElement("div");
-      row.innerHTML = `<b>${key}:</b> ${data.times[key]}`;
-      container.appendChild(row);
+    if (key === "Tokyo") {
+      timeLabel = sessions.Tokyo.label;
+      if (currentTime >= sessions.Tokyo.start && currentTime < sessions.Tokyo.end) className = "green";
     }
+    else if (key === "London") {
+      timeLabel = sessions.London.label;
+      if (currentTime >= sessions.London.start && currentTime < sessions.London.end) className = "green";
+    }
+    else if (key === "NewYork") {
+      timeLabel = sessions.NewYork.label;
+      let nyEnd = sessions.NewYork.end > 24 ? sessions.NewYork.end - 24 : sessions.NewYork.end;
+      if ((currentTime >= sessions.NewYork.start && currentTime < 24) || (currentTime >= 0 && currentTime < nyEnd)) className = "green";
+    }
+
+    if (key === "UTC") timeLabel = apiTimes.UTC
+    if (key === "PK") timeLabel = apiTimes.PK
+
+    const row = document.createElement("div");
+    row.innerHTML = `<b>${key}:</b> <span class="${className}">${timeLabel}</span>`;
+    container.appendChild(row);
   });
 }
 
