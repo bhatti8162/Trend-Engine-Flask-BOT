@@ -1,17 +1,34 @@
-def get_last_hour_strength(client,symbol="BTCUSDT"):
-    # Current price (futures)
-    ticker = client.futures_symbol_ticker(symbol=symbol)
-    current_price = float(ticker["price"])
+import requests
 
-    # Get current 1H candle (active)
-    klines = client.futures_klines(
-        symbol=symbol,
-        interval="1h",
-        limit=1
-    )
+def get_1h_change(symbol="BTC", api_key="YOUR_API_KEY"):
+    """
+    Returns 1-hour percent change for a given symbol from CoinMarketCap.
 
-    open_price = float(klines[0][1])
+    Args:
+        symbol (str): Crypto symbol like 'BTC', 'ETH'.
+        api_key (str): Your CoinMarketCap API key.
 
-    percent_change = ((current_price - open_price) / open_price) * 100
+    Returns:
+        float: 1-hour percent change, or None if failed.
+    """
+    url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
+    headers = {
+        "Accepts": "application/json",
+        "X-CMC_PRO_API_KEY": "7777a8f48a2f404ea957acb2f00af503"
+    }
+    params = {
+        "symbol": symbol.upper(),
+        "convert": "USD"
+    }
 
-    return round(percent_change, 2)
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        percent_1h = data["data"][symbol.upper()]["quote"]["USD"]["percent_change_1h"]
+        return round(percent_1h, 2)
+
+    except Exception as e:
+        print(f"Error fetching 1h change for {symbol}: {e}")
+        return None

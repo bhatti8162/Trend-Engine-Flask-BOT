@@ -29,6 +29,7 @@
   #decision {
     font-size: 20px;
     margin-top: 5px;
+    /* color: #ffff; */
     font-weight: bold;
   }
   .tf-container {
@@ -50,9 +51,8 @@
     text-align: center;
   }
   .green { color: #00ff88; }
-  .red { color: #ff4d4d; } 
+  .red { color: #ff4444; }
   .gray { color: #999; }
-
   .times {
     padding: 20px;
     text-align: center;
@@ -96,6 +96,7 @@
 <div class="header">
   <div id="symbol">--</div>
   <div id="price">--</div>
+  <div id="btc_h1_change">--</div>
   <div id="decision">--</div>
 </div>
 
@@ -122,54 +123,27 @@
 </footer>
 
 <script>
-let btcDecisionGlobal = "--";
-
 async function loadTrend(symbol = "BTCUSDT") {
   showLoading(true);
-
   try {
-    const btcRes = await fetch(`/api/trend?symbol=BTCUSDT`);
-    const btcData = await btcRes.json();
-    btcDecisionGlobal = btcData.trade_decision || "--";
-
     const res = await fetch(`/api/trend?symbol=${symbol}`);
-    const coinData = await res.json();
+    const data = await res.json();
 
-    renderHeader(coinData, coinData.trade_decision);
-    renderTimeframes(coinData);
-    renderTimes(btcData.times);
+    renderHeader(data);
+    renderTimeframes(data);
+    renderTimes(data);
 
   } catch (err) {
     console.error("API Error:", err);
   }
-
   showLoading(false);
 }
 
-function renderHeader(data, coinDecision) {
+function renderHeader(data) {
   document.getElementById("symbol").innerText = data.symbol || "--";
   document.getElementById("price").innerText = data.price || "--";
-
-  let decisionHTML = `
-    <p>
-      BTC: <span class="${colorTrend(btcDecisionGlobal)}">
-        ${btcDecisionGlobal || "--"}
-      </span>
-    </p>
-  `;
-
-  if (coinDecision && data.symbol !== "BTCUSDT") {
-    decisionHTML += `
-      <p>
-        ${data.symbol}: 
-        <span class="${colorTrend(coinDecision)}">
-          ${coinDecision}
-        </span>
-      </p>
-    `;
-  }
-
-  document.getElementById("decision").innerHTML = decisionHTML;
+  document.getElementById("btc_h1_change").innerHTML = `<p><span class="${colorH1Change(data.btc_h1_change)}">BTC 1H Change: ${data.btc_h1_change}</span></p>` || "--";
+  document.getElementById("decision").innerHTML = `<p><span class="${colorTrend(data.trade_decision)}">${data.trade_decision}</span></p>` || "--";
 }
 
 function renderTimeframes(data) {
@@ -178,10 +152,11 @@ function renderTimeframes(data) {
 
   if (!data.trends) return;
 
+  // Order of timeframes
   const orderedTimeframes = ["1h", "15m", "5m", "1m"];
 
   orderedTimeframes.forEach(tf => {
-    if (!data.trends[tf]) return;
+    if (!data.trends[tf]) return; // skip if missing
 
     const trend = data.trends[tf] || "--";
     const ema = data.ema25_strength[tf] || "--";
@@ -195,7 +170,6 @@ function renderTimeframes(data) {
 
     card.innerHTML = `
       <h3>${tf}</h3>
-      <p>Symbol: ${data.symbol}</p>
       <p>Trend: <span class="${colorTrend(trend)}">${trend}</span></p>
       <p>EMA25: <span class="${colorTrend(ema)}">${ema}</span></p>
       <p>VWAP: <span class="${colorVWAP(vwap)}">${vwap}</span></p>
@@ -208,79 +182,63 @@ function renderTimeframes(data) {
   });
 }
 
-function renderTimes(apiTimes) {
+function renderTimes(data) {
   const container = document.getElementById("times");
   container.innerHTML = "";
+  if (!data.times) return;
 
-  // Current PKT time
-  const now = new Date();
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const pkt = new Date(utc + 5*60*60*1000);
-  const currentHour = pkt.getHours();
-  const currentMinute = pkt.getMinutes();
-  const currentTime = currentHour + currentMinute/60;
-
-  const sessions = {
-    "Tokyo": { start: 3, end: 12, label: "3:00 AM – 12:00 PM" },
-    "London": { start: 12, end: 21, label: "12:00 PM – 9:00 PM" },
-    "NewYork": { start: 17, end: 26, label: "5:00 PM – 2:00 AM" }
-  };
-
+  // Define the desired order
   const order = ["UTC", "PK", "Tokyo", "London", "NewYork"];
-  order.forEach(key => {
-    let className = "gray";
-    let timeLabel = "--";
 
-    if (key === "Tokyo") {
-      timeLabel = sessions.Tokyo.label;
-      if (currentTime >= sessions.Tokyo.start && currentTime < sessions.Tokyo.end) className = "green";
+  // Loop in the specified order
+  order.forEach((key) => {
+    if (data.times[key]) {
+      const row = document.createElement("div");
+      row.innerHTML = `<b>${key}:</b> ${data.times[key]}`;
+      container.appendChild(row);
     }
-    else if (key === "London") {
-      timeLabel = sessions.London.label;
-      if (currentTime >= sessions.London.start && currentTime < sessions.London.end) className = "green";
-    }
-    else if (key === "NewYork") {
-      timeLabel = sessions.NewYork.label;
-      let nyEnd = sessions.NewYork.end > 24 ? sessions.NewYork.end - 24 : sessions.NewYork.end;
-      if ((currentTime >= sessions.NewYork.start && currentTime < 24) || (currentTime >= 0 && currentTime < nyEnd)) className = "green";
-    }
-
-    if (key === "UTC") timeLabel = apiTimes.UTC
-    if (key === "PK") timeLabel = apiTimes.PK
-
-    const row = document.createElement("div");
-    row.innerHTML = `<b>${key}:</b> <span class="${className}">${timeLabel}</span>`;
-    container.appendChild(row);
   });
 }
 
 function colorTrend(value) {
+  value = String(value)
   if (!value) return "gray";
+
   const greenKeywords = ["UP", "BULLISH", "Bullish", "ABOVE"];
   const redKeywords = ["DOWN", "BEARISH", "Bearish", "BELOW"];
+
   if (greenKeywords.some(keyword => value.includes(keyword))) return "green";
   if (redKeywords.some(keyword => value.includes(keyword))) return "red";
+
   return "gray";
+}
+function colorH1Change(value) {
+  value = String(value)
+  if (!value) return "gray";
+
+  const redKeywords = ["-"];
+
+  if (redKeywords.some(keyword => value.includes(keyword))) return "red";
+
+  return "green";
 }
 
 function colorVWAP(value) {
-  if (!value) return "gray";
-  if (value === "ABOVE") return "green";
-  if (value === "BELOW") return "red";   // handle bearish
-  return "gray";
+  return value === "ABOVE" ? "green" : "red";
 }
 
 function showLoading(state) {
   document.getElementById("loading").style.display = state ? "block" : "none";
 }
 
+// Button click to load symbol
 document.getElementById("load-btn").addEventListener("click", () => {
   const symbol = document.getElementById("symbol-input").value.trim().toUpperCase();
   if (symbol) loadTrend(symbol);
 });
 
+// initial load
 loadTrend();
 </script>
-
 </body>
 </html>
