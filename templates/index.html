@@ -44,7 +44,7 @@
     border-radius: 8px;
     padding: 15px;
     margin: 10px;
-    min-width: 180px;
+    min-width: 140px;
   }
   .tf-card h3 {
     margin: 0 0 10px 0;
@@ -157,12 +157,13 @@ function renderTimeframes(data) {
   if (!data.trends) return;
 
   // Order of timeframes
-  const orderedTimeframes = ["1h", "15m", "5m", "1m"];
+  const orderedTimeframes = ["1d","1h", "15m", "5m", "1m"];
 
   orderedTimeframes.forEach(tf => {
     if (!data.trends[tf]) return; // skip if missing
 
     const trend = data.trends[tf] || "--";
+    const colors = data.colors[tf] || "--";
     const ema = data.ema25_strength[tf] || "--";
     const vwap = data.vwap_strength[tf] || "--";
     const rsi = data.rsi_strength[tf] || ["--", "--"];
@@ -175,6 +176,7 @@ function renderTimeframes(data) {
     card.innerHTML = `
       <h3>${tf}</h3>
       <p>Symbol: <b>${data.symbol}</b></p>
+      <p>Color: <span class="${colorTrend(colors)}">${colors}</span></p>
       <p>Trend: <span class="${colorTrend(trend)}">${trend}</span></p>
       <p>EMA25: <span class="${colorTrend(ema)}">${ema}</span></p>
       <p>VWAP: <span class="${colorVWAP(vwap)}">${vwap}</span></p>
@@ -237,8 +239,8 @@ function colorTrend(value) {
   value = String(value)
   if (!value) return "gray";
 
-  const greenKeywords = ["UP", "BULLISH", "Bullish", "ABOVE"];
-  const redKeywords = ["DOWN", "BEARISH", "Bearish", "BELOW"];
+  const greenKeywords = ["UP", "GREEN", "BULLISH", "Bullish", "ABOVE"];
+  const redKeywords = ["DOWN", "RED", "BEARISH", "Bearish", "BELOW"];
 
   if (greenKeywords.some(keyword => value.includes(keyword))) return "green";
   if (redKeywords.some(keyword => value.includes(keyword))) return "red";

@@ -6,7 +6,7 @@ from services.binance_service import get_binance_client
 from services.trend_engine import tf_map_on_trend_values
 from services.trend_decision import get_decision_on_signal
 from services.last_change import get_change
-from services.trailing_engine import long_trailing_atr, short_trailing_atr
+from services.color_detection import get_candle_colors
 
 
 # -----------------------------
@@ -62,8 +62,12 @@ def check_trend_engine(symbol):
             rsi_strength_map
         )
 
+        # change Chakcer
         h1_change, d1_change = get_change(symbol[:-4])
         btc_h1_change, btc_d1_change = get_change()
+
+        # candle color detection 
+        colors = get_candle_colors(client, symbol)
 
         return {
             "times": times,
@@ -72,6 +76,7 @@ def check_trend_engine(symbol):
             "btc_d1_change": f"{btc_d1_change}%",
             "price": round(price_cache, 6) if price_cache else None,
             "trends": trend_map,
+            "colors" : colors,
             "atr_strength": atr_strength_map,
             "adx_strength": adx_strength_map,
             "rsi_strength": rsi_strength_map,
