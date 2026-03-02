@@ -1,7 +1,4 @@
-from config import TIMEFRAMES
-
-
-def get_candle_colors(client, symbol="BTCUSDT", timeframes=TIMEFRAMES, limit=1):
+def get_candle_colors(client, symbol="BTCUSDT", timeframes=["1d","1h"], limit=1):
     """
     Returns the latest candle color for each timeframe.
     'green' = bullish, 'red' = bearish, 'doji' = neutral

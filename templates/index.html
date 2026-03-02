@@ -97,6 +97,11 @@
   <div style="display: flex; gap: 5px; width: fit-content; margin: 0 auto;">
     <div id="btc_h1_change">--</div>
     <div id="btc_d1_change">--</div>
+    <div id="btc_h1_color">--</div>
+    <div id="btc_d1_color">--</div>
+  </div>
+  <div style="display: flex; gap: 5px; width: fit-content; margin: 0 auto;">
+
   </div>
   <div id="symbol">--</div>
   <div id="price">--</div>
@@ -145,9 +150,13 @@ async function loadTrend(symbol = "BTCUSDT") {
 function renderHeader(data) {
   document.getElementById("symbol").innerText = data.symbol || "--";
   document.getElementById("price").innerText = data.price || "--";
-  document.getElementById("btc_h1_change").innerHTML = `<p>BTC Change <span class="${colorH1Change(data.btc_h1_change)}">1H Change: ${data.btc_h1_change}</span></p>` || "--";
+  // change of last candle
+  document.getElementById("btc_h1_change").innerHTML = `<p>BTC Change <span class="${colorH1Change(data.btc_h1_change)}">1H ${data.btc_h1_change}</span>,</p>` || "--";
+  document.getElementById("btc_d1_change").innerHTML = `<p><span class="${colorH1Change(data.btc_d1_change)}">1D ${data.btc_d1_change}</span></p>` || "--";
+  // color of last candle
+  document.getElementById("btc_h1_color").innerHTML = `<p>BTC Candle Color <span class="${colorH1Change(data.colors['1h'])}">1H ${data.colors['1h']}</span>,</p>` || "--";
+  document.getElementById("btc_d1_color").innerHTML = `<p><span class="${colorH1Change(data.colors['1d'])}">1D ${data.colors['1d']}</span></p>` || "--";
   document.getElementById("decision").innerHTML = `<p><span class="${colorTrend(data.trade_decision)}">${data.trade_decision}</span></p>` || "--";
-  document.getElementById("btc_d1_change").innerHTML = `<p><span class="${colorH1Change(data.btc_d1_change)}">1D Change: ${data.btc_d1_change}</span></p>` || "--";
 }
 
 function renderTimeframes(data) {
@@ -163,7 +172,6 @@ function renderTimeframes(data) {
     if (!data.trends[tf]) return; // skip if missing
 
     const trend = data.trends[tf] || "--";
-    const colors = data.colors[tf] || "--";
     const ema = data.ema25_strength[tf] || "--";
     const vwap = data.vwap_strength[tf] || "--";
     const rsi = data.rsi_strength[tf] || ["--", "--"];
@@ -176,7 +184,6 @@ function renderTimeframes(data) {
     card.innerHTML = `
       <h3>${tf}</h3>
       <p>Symbol: <b>${data.symbol}</b></p>
-      <p>Color: <span class="${colorTrend(colors)}">${colors}</span></p>
       <p>Trend: <span class="${colorTrend(trend)}">${trend}</span></p>
       <p>EMA25: <span class="${colorTrend(ema)}">${ema}</span></p>
       <p>VWAP: <span class="${colorVWAP(vwap)}">${vwap}</span></p>
@@ -251,7 +258,7 @@ function colorH1Change(value) {
   value = String(value)
   if (!value) return "gray";
 
-  const redKeywords = ["-"];
+  const redKeywords = ["-", "RED"];
 
   if (redKeywords.some(keyword => value.includes(keyword))) return "red";
 

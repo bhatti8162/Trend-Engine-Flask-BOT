@@ -82,7 +82,7 @@ def check_trend_engine(symbol):
             "rsi_strength": rsi_strength_map,
             "ema25_strength": ema_trend_map,
             "vwap_strength": vwap_trend_map,
-            "trade_decision": f"{trade_decision} | 1h change: {h1_change}%",
+            "trade_decision": f"{trade_decision}",
             "tf_match": tf_match
         }
         
