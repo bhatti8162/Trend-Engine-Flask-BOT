@@ -95,6 +95,7 @@
 
 <div class="header">
   <div style="display: flex; gap: 5px; width: fit-content; margin: 0 auto;">
+    <div id="market_state">--</div>
     <div id="predicted_color_h1">--</div>
     <div id="btc_h1_change">--</div>
     <div id="btc_d1_change">--</div>
@@ -157,8 +158,10 @@ function renderHeader(data) {
   // color of last candle
   document.getElementById("btc_h1_color").innerHTML = `<p>BTC Candle Color <span class="${colorH1Change(data.colors['1h'])}">1H ${data.colors['1h']}</span>,</p>` || "--";
   document.getElementById("btc_d1_color").innerHTML = `<p><span class="${colorH1Change(data.colors['1d'])}">1D ${data.colors['1d']}</span> </p>` || "--";
-  // demand supply level
+  // 1h Prediction
   document.getElementById("predicted_color_h1").innerHTML = `<p>1H Pridiction<span class="${colorTrend(data.predicted_color_h1)}"> ${data.predicted_color_h1}</span> | </p>` || "--";
+  // Market State
+  document.getElementById("market_state").innerHTML = `<p>Market State <span class="${colorTrend(data.market_state)}"> ${data.market_state}</span> | </p>` || "--";
  
   document.getElementById("decision").innerHTML = `<p>${data.trade_decision}</p>` || "--";
 }

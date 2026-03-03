@@ -6,6 +6,7 @@ from services.binance_service import get_binance_client
 from services.trend_engine import tf_map_on_trend_values
 from services.indicator_counter import get_indicator_counts
 from services.prediction_h1 import forecast_1h_demand_supply_color
+from services.market_state import get_market_state
 from services.last_change import get_change
 from services.color_detection import get_candle_colors
 
@@ -67,10 +68,12 @@ def check_trend_engine(symbol):
         # candle color detection 
         colors = get_candle_colors(client)
         predicted_color_h1 = forecast_1h_demand_supply_color(client)
+        market_state = get_market_state(client)
 
         return {
             "times": times,
             "symbol": symbol,
+            "market_state": str(market_state).upper(),
             "predicted_color_h1": str(predicted_color_h1).upper(),
             "btc_h1_change": f"{btc_h1_change}%",
             "btc_d1_change": f"{btc_d1_change}%",
