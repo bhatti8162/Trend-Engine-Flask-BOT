@@ -1,36 +1,31 @@
 import pandas as pd
 import numpy as np
 
-def scalp_demand_supply_pro(
+def scalp_demand_supply_momentum(
     client,
     symbol="BTCUSDT",
     interval="5m",
     higher_tf="1h",
-    ema_period=25,
+    ema_period=25
 ):
     """
-    Advanced 5m Demand/Supply detector.
-    - Detects real imbalance (impulse move)
-    - Uses volume confirmation
-    - ATR adaptive logic
+    5m momentum-based demand/supply detector.
+    Designed for trades lasting ~15–30 minutes.
+    - Uses last closed candle as impulse
+    - EMA slope confirmation
     - 1H trend alignment
-    - Returns: (demand: bool, supply: bool)
+    - ATR adaptive buffer
+    Returns: (demand: bool, supply: bool)
     """
 
     # =========================
-    # Fetch 5m Data
+    # Fetch 5m candles
     # =========================
-    klines = client.get_klines(
-        symbol=symbol,
-        interval=interval,
-        limit=100
-    )
-
+    klines = client.get_klines(symbol=symbol, interval=interval, limit=100)
     df = pd.DataFrame(klines, columns=[
         "time","open","high","low","close","volume",
         "close_time","qav","trades","tbbav","tbqav","ignore"
     ])
-
     df[["open","high","low","close","volume"]] = df[
         ["open","high","low","close","volume"]
     ].astype(float)
@@ -38,83 +33,54 @@ def scalp_demand_supply_pro(
     current_price = df["close"].iloc[-1]
 
     # =========================
-    # EMA
+    # EMA & Slope
     # =========================
     df["ema"] = df["close"].ewm(span=ema_period, adjust=False).mean()
     ema_now = df["ema"].iloc[-1]
+    ema_prev = df["ema"].iloc[-2]
+    ema_slope_up = ema_now > ema_prev
+    ema_slope_down = ema_now < ema_prev
 
     # =========================
-    # ATR
+    # ATR for adaptive threshold
     # =========================
     df["tr"] = np.maximum(
         df["high"] - df["low"],
-        np.maximum(
-            abs(df["high"] - df["close"].shift()),
-            abs(df["low"] - df["close"].shift())
-        )
+        np.maximum(abs(df["high"] - df["close"].shift()), abs(df["low"] - df["close"].shift()))
     )
     df["atr"] = df["tr"].rolling(14).mean()
     atr = df["atr"].iloc[-1]
 
     # =========================
-    # Detect Impulse Candle
+    # Detect last impulse candle
     # =========================
-    df["body"] = abs(df["close"] - df["open"])
-    df["avg_volume"] = df["volume"].rolling(20).mean()
+    last = df.iloc[-2]  # last closed candle
+    body = abs(last["close"] - last["open"])
+    avg_vol = df["volume"].rolling(20).mean().iloc[-2]
 
-    impulse = df[
-        (df["body"] > atr * 1.2) &  # strong body
-        (df["volume"] > df["avg_volume"])  # volume spike
-    ]
-
-    demand = False
-    supply = False
-
-    if not impulse.empty:
-        last_impulse = impulse.iloc[-1]
-
-        # Bullish impulse → Demand zone
-        if last_impulse["close"] > last_impulse["open"]:
-            zone_low = last_impulse["low"]
-            zone_high = last_impulse["open"]  # base area
-
-            if zone_low <= current_price <= zone_high:
-                if current_price > ema_now:
-                    demand = True
-
-        # Bearish impulse → Supply zone
-        if last_impulse["close"] < last_impulse["open"]:
-            zone_high = last_impulse["high"]
-            zone_low = last_impulse["open"]
-
-            if zone_low <= current_price <= zone_high:
-                if current_price < ema_now:
-                    supply = True
+    strong_bull = last["close"] > last["open"] and body > atr and last["volume"] > avg_vol
+    strong_bear = last["close"] < last["open"] and body > atr and last["volume"] > avg_vol
+    midpoint = (last["high"] + last["low"]) / 2
 
     # =========================
-    # Higher TF Confirmation
+    # 1H Trend Filter
     # =========================
-    htf_klines = client.get_klines(
-        symbol=symbol,
-        interval=higher_tf,
-        limit=ema_period + 5
-    )
-
+    htf_klines = client.get_klines(symbol=symbol, interval=higher_tf, limit=ema_period + 5)
     df_htf = pd.DataFrame(htf_klines, columns=[
         "time","open","high","low","close","volume",
         "close_time","qav","trades","tbbav","tbqav","ignore"
     ])
-
     df_htf["close"] = df_htf["close"].astype(float)
     df_htf["ema"] = df_htf["close"].ewm(span=ema_period, adjust=False).mean()
-
     htf_price = df_htf["close"].iloc[-1]
     htf_ema = df_htf["ema"].iloc[-1]
+    htf_bullish = htf_price > htf_ema
+    htf_bearish = htf_price < htf_ema
 
-    if demand and htf_price < htf_ema:
-        demand = False
-
-    if supply and htf_price > htf_ema:
-        supply = False
+    # =========================
+    # Final Demand/Supply Logic
+    # =========================
+    demand = strong_bull and current_price > midpoint and current_price > ema_now and ema_slope_up and htf_bullish
+    supply = strong_bear and current_price < midpoint and current_price < ema_now and ema_slope_down and htf_bearish
 
     return bool(demand), bool(supply)
