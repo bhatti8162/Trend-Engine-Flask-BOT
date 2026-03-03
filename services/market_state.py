@@ -3,20 +3,21 @@ import pandas as pd
 import numpy as np
 
 def get_market_state(Client, symbol="BTCUSDT",
-                     ema_period=9,
-                     atr_period=14,
-                     atr_threshold_15m=0.004,
-                     limit_5m=200,
-                     limit_15m=200):
+                            ema_period=9,
+                            volume_period=14,
+                            volume_threshold=1.0,
+                            limit_5m=200,
+                            limit_15m=200):
     """
-    Returns 'trending' or 'choppy' for 15–30 min BTC scalp.
+    Returns 'trending' or 'choppy' for 15–30 min BTC scalp using volume instead of ATR.
     
     Logic:
-    - 5m EMA‑9 slope and price vs VWAP → short-term direction
-    - 15m ATR → detect actual choppiness
+    - 5m EMA‑9 slope + price vs VWAP → short-term direction
+    - 15m volume spike → trending move detection
     """
 
     client = Client
+
     # -------------------------------
     # Helper to fetch candles
     # -------------------------------
@@ -34,16 +35,6 @@ def get_market_state(Client, symbol="BTCUSDT",
     # -------------------------------
     # Indicators
     # -------------------------------
-    def atr_ratio(df):
-        df["tr"] = df[["high","low","close"]].apply(
-            lambda r: max(r["high"]-r["low"], abs(r["high"]-r["close"]), abs(r["low"]-r["close"])),
-            axis=1
-        )
-        df["atr"] = df["tr"].rolling(atr_period).mean()
-        ratio = df["atr"].iloc[-1] / df["close"].iloc[-1]
-        df.drop(["tr","atr"], axis=1, inplace=True)
-        return ratio
-
     def ema_slope(df):
         df["ema"] = df["close"].ewm(span=ema_period, adjust=False).mean()
         slope = df["ema"].iloc[-1] - df["ema"].iloc[-2]
@@ -61,6 +52,12 @@ def get_market_state(Client, symbol="BTCUSDT",
         pos = 'above' if df['close'].iloc[-1] > vwap.iloc[-1] else 'below'
         return pos
 
+    def volume_spike(df, period):
+        df["vol_ma"] = df["volume"].rolling(period).mean()
+        ratio = df["volume"].iloc[-1] / df["vol_ma"].iloc[-1]
+        df.drop("vol_ma", axis=1, inplace=True)
+        return ratio
+
     # -------------------------------
     # Fetch data
     # -------------------------------
@@ -71,13 +68,13 @@ def get_market_state(Client, symbol="BTCUSDT",
     ema_slope_5m = ema_slope(df_5m.copy())
     price_vs_vwap_5m = vwap_position(df_5m.copy())
 
-    # 15m choppiness
-    atr_ratio_15m = atr_ratio(df_15m.copy())
+    # 15m volume spike
+    vol_ratio_15m = volume_spike(df_15m.copy(), volume_period)
 
     # -------------------------------
     # Decision logic
     # -------------------------------
-    if atr_ratio_15m > atr_threshold_15m and ema_slope_5m > 0 and price_vs_vwap_5m == "above":
+    if vol_ratio_15m > volume_threshold and ema_slope_5m > 0 and price_vs_vwap_5m == "above":
         return "trending"
     else:
         return "choppy"
@@ -85,4 +82,4 @@ def get_market_state(Client, symbol="BTCUSDT",
 # -------------------------------
 # Example usage
 # -------------------------------
-# print(btc_market_state())
+# print(btc_market_state_volume())
