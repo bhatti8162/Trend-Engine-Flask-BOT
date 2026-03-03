@@ -4,7 +4,7 @@ from config import SYMBOL_DEFAULT
 
 from services.binance_service import get_binance_client
 from services.trend_engine import tf_map_on_trend_values
-from services.trend_decision import get_decision_on_signal
+from services.indicator_counter import get_indicator_counts
 from services.prediction_h1 import forecast_1h_demand_supply_color
 from services.last_change import get_change
 from services.color_detection import get_candle_colors
@@ -54,7 +54,7 @@ def check_trend_engine(symbol):
             new_trend
         ) = tf_map_on_trend_values(client, symbol)
 
-        trade_decision = get_decision_on_signal(
+        trade_decision = get_indicator_counts(
             trend_map,
             ema_trend_map,
             vwap_trend_map,

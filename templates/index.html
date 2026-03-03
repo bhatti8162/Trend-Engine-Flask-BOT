@@ -158,9 +158,9 @@ function renderHeader(data) {
   document.getElementById("btc_h1_color").innerHTML = `<p>BTC Candle Color <span class="${colorH1Change(data.colors['1h'])}">1H ${data.colors['1h']}</span>,</p>` || "--";
   document.getElementById("btc_d1_color").innerHTML = `<p><span class="${colorH1Change(data.colors['1d'])}">1D ${data.colors['1d']}</span> </p>` || "--";
   // demand supply level
-  document.getElementById("predicted_color_h1").innerHTML = `<p>H1 Pridiction<span class="${colorTrend(data.predicted_color_h1)}"> ${data.predicted_color_h1}</span> | </p>` || "--";
+  document.getElementById("predicted_color_h1").innerHTML = `<p>1H Pridiction<span class="${colorTrend(data.predicted_color_h1)}"> ${data.predicted_color_h1}</span> | </p>` || "--";
  
-  document.getElementById("decision").innerHTML = `<p><span class="${colorTrend(data.trade_decision)}">${data.trade_decision}</span></p>` || "--";
+  document.getElementById("decision").innerHTML = `<p>${data.trade_decision}</p>` || "--";
 }
 
 function renderTimeframes(data) {
