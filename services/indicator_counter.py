@@ -1,7 +1,6 @@
 def get_indicator_counts(
     trend_map,
     ema_trend_map,
-    vwap_trend_map,
     atr_map,
     adx_map,
     rsi_map
@@ -15,22 +14,19 @@ def get_indicator_counts(
     bullish_count = 0
     bearish_count = 0
 
-    # ---------- STRUCTURE: Trend + EMA + VWAP ----------
+    # ---------- STRUCTURE: Trend + EMA ----------
     for tf in tf_weights:
         t = trend_map.get(tf)
         e = ema_trend_map.get(tf)
-        v = vwap_trend_map.get(tf)
 
         bullish_count += sum([
             t == "BULLISH",
             e == "UP",
-            v == "ABOVE"
         ])
 
         bearish_count += sum([
             t == "BEARISH",
             e == "DOWN",
-            v == "BELOW"
         ])
 
     # # ---------- TREND STRENGTH: ADX ----------

@@ -39,14 +39,12 @@ def is_symbol_available(client, symbol: str):
 # -----------------------------
 def check_trend_engine(symbol):
 
-    try:
         (
             times,
             symbol,
             price_cache,
             trend_map,
             ema_trend_map,
-            vwap_trend_map,
             atr_strength_map,
             adx_strength_map,
             rsi_strength_map,
@@ -57,7 +55,6 @@ def check_trend_engine(symbol):
         trade_decision = get_indicator_counts(
             trend_map,
             ema_trend_map,
-            vwap_trend_map,
             atr_strength_map,
             adx_strength_map,
             rsi_strength_map
@@ -84,18 +81,10 @@ def check_trend_engine(symbol):
             "adx_strength": adx_strength_map,
             "rsi_strength": rsi_strength_map,
             "ema25_strength": ema_trend_map,
-            "vwap_strength": vwap_trend_map,
             "trade_decision": f"{trade_decision}",
             "tf_match": tf_match
         }
         
-    except Exception as e:
-        print("Trend engine error:", e)
-        return {
-            "error": "Failed to calculate trend values",
-            "symbol": symbol
-        }
-
 
 # -----------------------------
 # Flask App

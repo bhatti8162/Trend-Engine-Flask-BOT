@@ -9,10 +9,6 @@ from collections import OrderedDict
 import os
 
 LAST_TF_MATCH = None
-LAST_VWAP = None
-
-LONG_TRAIL_STOP = None
-SHORT_TRAIL_STOP = None
 
 # -------- Helper Functions --------
 def utc_now():
@@ -21,11 +17,7 @@ def utc_now():
 
 def format_time(dt, tz_name):
     local_time = dt.astimezone(ZoneInfo(tz_name))
-
-    if tz_name.upper() == "UTC":
-        return local_time.strftime("%Y-%m-%d %H:%M:%S")
-    else:
-        return local_time.strftime("%I:%M:%S %p")
+    return local_time.strftime("%I:%M:%S %p")
 
 def trend_values_of_indicators(df):
 
@@ -83,24 +75,6 @@ def trend_values_of_indicators(df):
     else:
         ema_trend = "FLAT"
 
-    # ----- VWAP TREND -----
-    # Compute median VWAP and threshold (optional for spikes)
-    median_vwap = df['vwap'].median()
-    global LAST_VWAP
-    # Initialize LAST_VWAP if it's None
-    if LAST_VWAP is None:
-        LAST_VWAP = last['vwap']
-    # Only update LAST_VWAP if current VWAP is lower than last
-    if last['vwap'] < LAST_VWAP:
-        LAST_VWAP = last['vwap']
-        
-    if last['close'] > LAST_VWAP:
-        vwap_trend = "ABOVE"
-    elif last['close'] < LAST_VWAP:
-        vwap_trend = "BELOW"
-    else:
-        vwap_trend = "AT"
-
     # ----- TREND -----
     if last['ma50'] > last['ma100']:
         trend = "BULLISH"
@@ -109,7 +83,7 @@ def trend_values_of_indicators(df):
     else:
         trend = None
 
-    return trend, ema_trend, vwap_trend, [atr, round(atx_value)] , [adx, round(adx_value)] , [rsi_level, round(rsi_value)] 
+    return trend, ema_trend, [atr, f"{round(atr_percent,2)}%"] , [adx, round(adx_value)] , [rsi_level, round(rsi_value)] 
 
 
 
@@ -117,7 +91,6 @@ def trend_values_of_indicators(df):
 def tf_map_on_trend_values(client,symbol):
     trend_map = OrderedDict()
     ema_trend_map = OrderedDict()
-    vwap_trend_map = OrderedDict()
     atr_strength_map = OrderedDict()
     adx_strength_map= OrderedDict()
     rsi_strength_map= OrderedDict()
@@ -128,14 +101,13 @@ def tf_map_on_trend_values(client,symbol):
         df = fetch_df_klines(client,symbol, tf)
 
         if df is None:
-            trend_map[tf] = None
-            atr_strength_map[tf] = "ERROR"
+            # trend_map[tf] = None
+            # atr_strength_map[tf] = "ERROR"
             continue
 
-        trend, ema_trend, vwap_trend, atr, adx, rsi = trend_values_of_indicators(df)
+        trend, ema_trend, atr, adx, rsi = trend_values_of_indicators(df)
         trend_map[tf] = trend
         ema_trend_map[tf] = ema_trend
-        vwap_trend_map[tf] = vwap_trend
         atr_strength_map[tf] = atr
         adx_strength_map[tf] = adx
         rsi_strength_map[tf] = rsi
@@ -144,6 +116,7 @@ def tf_map_on_trend_values(client,symbol):
         if tf == "1m":
             price_cache = float(df.iloc[-1]['close'])
 
+   
     # Multi-TF Alignment
     if all(v == "BULLISH" for v in trend_map.values()):
         tf_match = "BULLISH"
@@ -164,8 +137,8 @@ def tf_map_on_trend_values(client,symbol):
         ("UTC", format_time(now, "UTC")),
         ("PK", format_time(now, "Asia/Karachi")),
         ("London", format_time(now, "Europe/London")),
-        ("New_York", format_time(now, "America/New_York")),
+        ("NewYork", format_time(now, "America/New_York")),
         ("Tokyo", format_time(now, "Asia/Tokyo"))
     ])
-    return times, symbol, price_cache, trend_map, ema_trend_map, vwap_trend_map, atr_strength_map, adx_strength_map, rsi_strength_map, tf_match, new_trend
+    return times, symbol, price_cache, trend_map, ema_trend_map, atr_strength_map, adx_strength_map, rsi_strength_map, tf_match, new_trend
 

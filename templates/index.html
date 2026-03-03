@@ -44,7 +44,7 @@
     border-radius: 8px;
     padding: 15px;
     margin: 10px;
-    min-width: 140px;
+    min-width: 180px;
   }
   .tf-card h3 {
     margin: 0 0 10px 0;
@@ -177,7 +177,6 @@ function renderTimeframes(data) {
 
     const trend = data.trends[tf] || "--";
     const ema = data.ema25_strength[tf] || "--";
-    const vwap = data.vwap_strength[tf] || "--";
     const rsi = data.rsi_strength[tf] || ["--", "--"];
     const adx = data.adx_strength[tf] || ["--", "--"];
     const atr = data.atr_strength[tf] || ["--", "--"];
@@ -190,8 +189,7 @@ function renderTimeframes(data) {
       <p>Symbol: <b>${data.symbol}</b></p>
       <p>Trend: <span class="${colorTrend(trend)}">${trend}</span></p>
       <p>EMA25: <span class="${colorTrend(ema)}">${ema}</span></p>
-      <p>VWAP: <span class="${colorVWAP(vwap)}">${vwap}</span></p>
-      <p>RSI: ${rsi[0]} (${rsi[1]})</p>
+      <p>RSI: <span class="${colorTrend(rsi[0])}">${rsi[0]} (${rsi[1]})</span></p>
       <p>ADX: ${adx[0]} (${adx[1]})</p>
       <p>ATR: ${atr[0]} (${atr[1]})</p>
     `;
@@ -250,8 +248,8 @@ function colorTrend(value) {
   value = String(value)
   if (!value) return "gray";
 
-  const greenKeywords = ["UP", "GREEN", "BULLISH", "Bullish", "ABOVE"];
-  const redKeywords = ["DOWN", "RED", "BEARISH", "Bearish", "BELOW"];
+  const greenKeywords = ["UP", "GREEN", "BULLISH", "OVERSOLD", "ABOVE"];
+  const redKeywords = ["DOWN", "RED", "BEARISH", "OVERBOUGHT", "BELOW"];
 
   if (greenKeywords.some(keyword => value.includes(keyword))) return "green";
   if (redKeywords.some(keyword => value.includes(keyword))) return "red";
@@ -269,9 +267,7 @@ function colorH1Change(value) {
   return "green";
 }
 
-function colorVWAP(value) {
-  return value === "ABOVE" ? "green" : "red";
-}
+
 
 function showLoading(state) {
   document.getElementById("loading").style.display = state ? "block" : "none";
