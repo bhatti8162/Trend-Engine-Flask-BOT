@@ -5,7 +5,7 @@ from config import SYMBOL_DEFAULT
 from services.binance_service import get_binance_client
 from services.trend_engine import tf_map_on_trend_values
 from services.trend_decision import get_decision_on_signal
-from services.demand_supply import scalp_demand_supply_momentum
+from services.prediction_h1 import forecast_1h_demand_supply_color
 from services.last_change import get_change
 from services.color_detection import get_candle_colors
 
@@ -69,13 +69,12 @@ def check_trend_engine(symbol):
 
         # candle color detection 
         colors = get_candle_colors(client)
-        demand, supply = scalp_demand_supply_momentum(client)
+        predicted_color_h1 = forecast_1h_demand_supply_color(client)
 
         return {
             "times": times,
             "symbol": symbol,
-            "demand": str(demand).upper(),
-            "supply": str(supply).upper(),
+            "predicted_color_h1": str(predicted_color_h1).upper(),
             "btc_h1_change": f"{btc_h1_change}%",
             "btc_d1_change": f"{btc_d1_change}%",
             "price": round(price_cache, 6) if price_cache else None,

@@ -95,6 +95,7 @@
 
 <div class="header">
   <div style="display: flex; gap: 5px; width: fit-content; margin: 0 auto;">
+    <div id="predicted_color_h1">--</div>
     <div id="btc_h1_change">--</div>
     <div id="btc_d1_change">--</div>
     <div id="btc_h1_color">--</div>
@@ -102,8 +103,6 @@
 
   </div>
   <div style="display: flex; gap: 5px; width: fit-content; margin: 0 auto;">
-    <div id="demand">--</div>
-    <div id="supply">--</div>
   </div>
   <div id="symbol">--</div>
   <div id="price">--</div>
@@ -159,8 +158,7 @@ function renderHeader(data) {
   document.getElementById("btc_h1_color").innerHTML = `<p>BTC Candle Color <span class="${colorH1Change(data.colors['1h'])}">1H ${data.colors['1h']}</span>,</p>` || "--";
   document.getElementById("btc_d1_color").innerHTML = `<p><span class="${colorH1Change(data.colors['1d'])}">1D ${data.colors['1d']}</span> </p>` || "--";
   // demand supply level
-  document.getElementById("demand").innerHTML = `<p>Demand<span class="${colorH1Change(data.demand)}"> ${data.demand}</span>,</p>` || "--";
-  document.getElementById("supply").innerHTML = `<p>Supply<span class="${colorH1Change(data.supply)}"> ${data.supply}</span></p>` || "--";
+  document.getElementById("predicted_color_h1").innerHTML = `<p>H1 Pridiction<span class="${colorTrend(data.predicted_color_h1)}"> ${data.predicted_color_h1}</span> | </p>` || "--";
  
   document.getElementById("decision").innerHTML = `<p><span class="${colorTrend(data.trade_decision)}">${data.trade_decision}</span></p>` || "--";
 }
